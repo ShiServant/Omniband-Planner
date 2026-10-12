@@ -1,19 +1,72 @@
 import type { Metadata } from "next";
-import { EmptyState } from "@/components/empty-state";
+import { DatabaseUnavailable } from "@/components/database-unavailable";
 import { PageHeader } from "@/components/page-header";
+import { TaskFilters } from "@/components/task-filters";
+import { TaskList } from "@/components/task-list";
+import { listPeople } from "@/lib/data/people";
+import { listProjects } from "@/lib/data/projects";
+import { listTasks } from "@/lib/data/tasks";
+import { firstParam } from "@/lib/format";
+import { parseTaskFilters } from "@/lib/task-filters";
 
 export const metadata: Metadata = {
   title: "Tasks",
 };
 
-export default function TasksPage() {
+export default async function TasksPage(props: PageProps<"/tasks">) {
+  const params = await props.searchParams;
+  const filters = parseTaskFilters({
+    person: firstParam(params.person),
+    project: firstParam(params.project),
+    status: firstParam(params.status),
+    priority: firstParam(params.priority),
+  });
+  const [tasks, people, projects] = await Promise.all([
+    listTasks(filters),
+    listPeople(),
+    listProjects("all"),
+  ]);
+
   return (
     <>
       <PageHeader
         title="Tasks"
         description="Actions that need to happen, and the person responsible for each one."
       />
-      <EmptyState>No tasks yet.</EmptyState>
+      {tasks.configured && people.configured && projects.configured ? (
+        <>
+          <TaskFilters
+            filters={filters}
+            people={people.data}
+            projects={projects.data}
+          />
+          <p className="mb-3 text-sm text-muted-foreground">
+            {taskCountLabel(tasks.data.length, filters.status)}
+          </p>
+          {tasks.data.length > 0 ? (
+            <TaskList tasks={tasks.data} />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No tasks match these filters.
+            </p>
+          )}
+        </>
+      ) : (
+        <DatabaseUnavailable />
+      )}
     </>
   );
+}
+
+function taskCountLabel(
+  count: number,
+  status: string | undefined,
+) {
+  const noun = count === 1 ? "task" : "tasks";
+
+  if (!status || status === "outstanding") {
+    return `${count} outstanding ${noun}`;
+  }
+
+  return `${count} ${noun}`;
 }

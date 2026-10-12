@@ -1,6 +1,6 @@
 -- Society Project Hub schema.
--- Public reads use the anon role. Writes are not granted to anon.
--- The app uses the service role for changes only after the edit session is checked.
+-- The publishable key connects as the database role "anon", which can only read.
+-- Privileged writes use the server-side secret key, which bypasses these policies.
 
 do $$
 begin

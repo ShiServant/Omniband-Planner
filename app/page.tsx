@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import { EmptyState } from "@/components/empty-state";
+import { DashboardView } from "@/components/dashboard-view";
+import { DatabaseUnavailable } from "@/components/database-unavailable";
 import { PageHeader } from "@/components/page-header";
+import { getDashboard } from "@/lib/data/dashboard";
 import { getSiteName } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -9,14 +11,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const result = await getDashboard();
+
   return (
     <>
       <PageHeader
         title="Dashboard"
         description="What is happening across the society, and who is responsible."
       />
-      <EmptyState>No activity recorded yet.</EmptyState>
+      {result.configured ? (
+        <DashboardView data={result.data} />
+      ) : (
+        <DatabaseUnavailable />
+      )}
     </>
   );
 }

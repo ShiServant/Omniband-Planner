@@ -3,14 +3,16 @@ export function PageHeader({
   description,
 }: {
   title: string;
-  description: string;
+  description?: string;
 }) {
   return (
     <header className="mb-8">
       <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-      <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-        {description}
-      </p>
+      {description ? (
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          {description}
+        </p>
+      ) : null}
     </header>
   );
 }
