@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DatabaseUnavailable } from "@/components/database-unavailable";
+import { EditLink } from "@/components/edit-link";
 import { MeetingDetailView } from "@/components/meeting-detail";
 import { PageHeader } from "@/components/page-header";
+import { hasEditAccess } from "@/lib/admin/session";
 import { getMeeting } from "@/lib/data/meetings";
 
 export async function generateMetadata(
@@ -24,7 +26,7 @@ export async function generateMetadata(
 
 export default async function MeetingPage(props: PageProps<"/meetings/[id]">) {
   const { id } = await props.params;
-  const result = await getMeeting(id);
+  const [result, editing] = await Promise.all([getMeeting(id), hasEditAccess()]);
 
   if (!result.configured) {
     return (
@@ -44,8 +46,15 @@ export default async function MeetingPage(props: PageProps<"/meetings/[id]">) {
 
   return (
     <>
-      <PageHeader title={result.data.title} />
-      <MeetingDetailView meeting={result.data} />
+      <PageHeader
+        title={result.data.title}
+        action={
+          editing ? (
+            <EditLink href={`/meetings/${result.data.id}/edit`}>Edit</EditLink>
+          ) : null
+        }
+      />
+      <MeetingDetailView meeting={result.data} canEdit={editing} />
     </>
   );
 }

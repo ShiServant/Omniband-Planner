@@ -4,7 +4,13 @@ import { TaskList } from "@/components/task-list";
 import { formatDateTime } from "@/lib/format";
 import type { MeetingDetail } from "@/lib/types";
 
-export function MeetingDetailView({ meeting }: { meeting: MeetingDetail }) {
+export function MeetingDetailView({
+  meeting,
+  canEdit = false,
+}: {
+  meeting: MeetingDetail;
+  canEdit?: boolean;
+}) {
   return (
     <>
       <p className="text-sm text-muted-foreground">
@@ -84,7 +90,7 @@ export function MeetingDetailView({ meeting }: { meeting: MeetingDetail }) {
 
       <Section title="Action items" prominent>
         {meeting.tasks.length > 0 ? (
-          <TaskList tasks={meeting.tasks} showSource={false} />
+          <TaskList tasks={meeting.tasks} showSource={false} canEdit={canEdit} />
         ) : (
           <p className="text-sm text-muted-foreground">
             No action items came out of this meeting.

@@ -6,7 +6,13 @@ import { TaskList } from "@/components/task-list";
 import { formatDate } from "@/lib/format";
 import type { DashboardData } from "@/lib/types";
 
-export function DashboardView({ data }: { data: DashboardData }) {
+export function DashboardView({
+  data,
+  canEdit = false,
+}: {
+  data: DashboardData;
+  canEdit?: boolean;
+}) {
   const counts = [
     { label: "Active projects", value: data.counts.active },
     { label: "On track", value: data.counts.onTrack },
@@ -81,7 +87,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
 
       <Section title="Important outstanding tasks" prominent>
         {data.importantTasks.length > 0 ? (
-          <TaskList tasks={data.importantTasks} />
+          <TaskList tasks={data.importantTasks} canEdit={canEdit} />
         ) : (
           <p className="text-sm text-muted-foreground">
             No high-priority or soon-due tasks.

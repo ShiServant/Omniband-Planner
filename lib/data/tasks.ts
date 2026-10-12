@@ -1,6 +1,8 @@
 import "server-only";
 
+import { cache } from "react";
 import { failRead, one, type DataResult } from "@/lib/data/read";
+import { isUuid } from "@/lib/format";
 import { getReadClient } from "@/lib/supabase/read";
 import type {
   NamedRef,
@@ -114,3 +116,33 @@ export async function listTasks(
     data: ((data ?? []) as TaskRow[]).map(mapTask).sort(compareTasks),
   };
 }
+
+export const getTask = cache(
+  async (id: string): Promise<DataResult<TaskSummary | null>> => {
+    if (!isUuid(id)) {
+      return { configured: true, data: null };
+    }
+
+    const client = getReadClient();
+
+    if (!client) {
+      return { configured: false };
+    }
+
+    const { data, error } = await client
+      .from("tasks")
+      .select(TASK_SELECT)
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      failRead("task", error.message);
+    }
+
+    if (!data) {
+      return { configured: true, data: null };
+    }
+
+    return { configured: true, data: mapTask(data as TaskRow) };
+  },
+);

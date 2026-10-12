@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { DatabaseUnavailable } from "@/components/database-unavailable";
+import { EditLink } from "@/components/edit-link";
 import { PageHeader } from "@/components/page-header";
 import { TaskFilters } from "@/components/task-filters";
 import { TaskList } from "@/components/task-list";
+import { hasEditAccess } from "@/lib/admin/session";
 import { listPeople } from "@/lib/data/people";
 import { listProjects } from "@/lib/data/projects";
 import { listTasks } from "@/lib/data/tasks";
@@ -21,10 +23,11 @@ export default async function TasksPage(props: PageProps<"/tasks">) {
     status: firstParam(params.status),
     priority: firstParam(params.priority),
   });
-  const [tasks, people, projects] = await Promise.all([
+  const [tasks, people, projects, editing] = await Promise.all([
     listTasks(filters),
     listPeople(),
     listProjects("all"),
+    hasEditAccess(),
   ]);
 
   return (
@@ -32,6 +35,7 @@ export default async function TasksPage(props: PageProps<"/tasks">) {
       <PageHeader
         title="Tasks"
         description="Actions that need to happen, and the person responsible for each one."
+        action={editing ? <EditLink href="/tasks/new">Add task</EditLink> : null}
       />
       {tasks.configured && people.configured && projects.configured ? (
         <>
@@ -44,7 +48,7 @@ export default async function TasksPage(props: PageProps<"/tasks">) {
             {taskCountLabel(tasks.data.length, filters.status)}
           </p>
           {tasks.data.length > 0 ? (
-            <TaskList tasks={tasks.data} />
+            <TaskList tasks={tasks.data} canEdit={editing} />
           ) : (
             <p className="text-sm text-muted-foreground">
               No tasks match these filters.

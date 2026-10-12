@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DatabaseUnavailable } from "@/components/database-unavailable";
+import { EditLink } from "@/components/edit-link";
 import { PageHeader } from "@/components/page-header";
 import { PersonAvatar } from "@/components/person-avatar";
 import { StatusBadge } from "@/components/status-badge";
+import { hasEditAccess } from "@/lib/admin/session";
 import { listPeople } from "@/lib/data/people";
 
 export const metadata: Metadata = {
@@ -11,13 +13,14 @@ export const metadata: Metadata = {
 };
 
 export default async function PeoplePage() {
-  const result = await listPeople();
+  const [result, editing] = await Promise.all([listPeople(), hasEditAccess()]);
 
   return (
     <>
       <PageHeader
         title="People"
         description="Society members, the projects they lead, and the work they are responsible for."
+        action={editing ? <EditLink href="/people/new">Add person</EditLink> : null}
       />
       {result.configured ? (
         result.data.length > 0 ? (

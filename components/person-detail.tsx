@@ -9,7 +9,13 @@ import {
 import { TaskList } from "@/components/task-list";
 import type { PersonDetail } from "@/lib/types";
 
-export function PersonDetailView({ person }: { person: PersonDetail }) {
+export function PersonDetailView({
+  person,
+  canEdit = false,
+}: {
+  person: PersonDetail;
+  canEdit?: boolean;
+}) {
   const openTasks = person.tasks.filter((task) => task.status !== "done");
   const doneTasks = person.tasks.filter((task) => task.status === "done");
 
@@ -79,7 +85,7 @@ export function PersonDetailView({ person }: { person: PersonDetail }) {
 
       <Section title="Responsible tasks" prominent>
         {openTasks.length > 0 ? (
-          <TaskList tasks={openTasks} showResponsible={false} />
+          <TaskList tasks={openTasks} showResponsible={false} canEdit={canEdit} />
         ) : (
           <p className="text-sm text-muted-foreground">
             No outstanding tasks.
@@ -90,7 +96,7 @@ export function PersonDetailView({ person }: { person: PersonDetail }) {
             <h3 className="mb-3 text-sm font-medium text-muted-foreground">
               Done
             </h3>
-            <TaskList tasks={doneTasks} showResponsible={false} />
+            <TaskList tasks={doneTasks} showResponsible={false} canEdit={canEdit} />
           </div>
         ) : null}
       </Section>

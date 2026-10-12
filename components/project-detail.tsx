@@ -1,3 +1,4 @@
+import { EditLink } from "@/components/edit-link";
 import { PersonAvatar } from "@/components/person-avatar";
 import { PersonLink } from "@/components/record-link";
 import { Section } from "@/components/section";
@@ -10,7 +11,13 @@ import { formatDate } from "@/lib/format";
 import type { ProjectDetail } from "@/lib/types";
 import Link from "next/link";
 
-export function ProjectDetailView({ project }: { project: ProjectDetail }) {
+export function ProjectDetailView({
+  project,
+  canEdit = false,
+}: {
+  project: ProjectDetail;
+  canEdit?: boolean;
+}) {
   const openTasks = project.tasks.filter((task) => task.status !== "done");
   const doneTasks = project.tasks.filter((task) => task.status === "done");
 
@@ -74,9 +81,17 @@ export function ProjectDetailView({ project }: { project: ProjectDetail }) {
         </ul>
       </Section>
 
-      <Section title="Tasks" prominent>
+      <Section
+        title="Tasks"
+        prominent
+        action={
+          canEdit ? (
+            <EditLink href={`/tasks/new?project=${project.id}`}>Add task</EditLink>
+          ) : null
+        }
+      >
         {openTasks.length > 0 ? (
-          <TaskList tasks={openTasks} showProject={false} />
+          <TaskList tasks={openTasks} showProject={false} canEdit={canEdit} />
         ) : (
           <p className="text-sm text-muted-foreground">No outstanding tasks.</p>
         )}
@@ -85,7 +100,7 @@ export function ProjectDetailView({ project }: { project: ProjectDetail }) {
             <h3 className="mb-3 text-sm font-medium text-muted-foreground">
               Done
             </h3>
-            <TaskList tasks={doneTasks} showProject={false} />
+            <TaskList tasks={doneTasks} showProject={false} canEdit={canEdit} />
           </div>
         ) : null}
       </Section>

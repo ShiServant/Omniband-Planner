@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DashboardView } from "@/components/dashboard-view";
 import { DatabaseUnavailable } from "@/components/database-unavailable";
 import { PageHeader } from "@/components/page-header";
+import { hasEditAccess } from "@/lib/admin/session";
 import { getDashboard } from "@/lib/data/dashboard";
 import { getSiteName } from "@/lib/site";
 
@@ -12,7 +13,10 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-  const result = await getDashboard();
+  const [result, editing] = await Promise.all([
+    getDashboard(),
+    hasEditAccess(),
+  ]);
 
   return (
     <>
@@ -21,7 +25,7 @@ export default async function DashboardPage() {
         description="What is happening across the society, and who is responsible."
       />
       {result.configured ? (
-        <DashboardView data={result.data} />
+        <DashboardView data={result.data} canEdit={editing} />
       ) : (
         <DatabaseUnavailable />
       )}

@@ -1,0 +1,77 @@
+"use client";
+
+import { useActionState } from "react";
+import { savePerson } from "@/lib/actions/people";
+import {
+  Field,
+  FormActions,
+  FormError,
+  inputClass,
+  textareaClass,
+} from "@/components/form-fields";
+import type { PersonSummary } from "@/lib/types";
+
+export function PersonForm({ person }: { person?: PersonSummary }) {
+  const [state, action, pending] = useActionState(savePerson, null);
+
+  return (
+    <form action={action} className="flex max-w-xl flex-col gap-4">
+      {person ? <input type="hidden" name="id" value={person.id} /> : null}
+      <Field label="Name">
+        <input
+          name="name"
+          required
+          defaultValue={person?.name ?? ""}
+          className={inputClass}
+        />
+      </Field>
+      <Field label="Society role">
+        <input
+          name="societyRole"
+          defaultValue={person?.societyRole ?? ""}
+          className={inputClass}
+        />
+      </Field>
+      <Field label="Email">
+        <input
+          name="email"
+          type="email"
+          defaultValue={person?.email ?? ""}
+          className={inputClass}
+        />
+      </Field>
+      <Field label="Contact">
+        <textarea
+          name="contactInfo"
+          defaultValue={person?.contactInfo ?? ""}
+          className={textareaClass}
+        />
+      </Field>
+      <Field label="Avatar URL" hint="Optional. Paste an image address.">
+        <input
+          name="avatarUrl"
+          type="url"
+          defaultValue={person?.avatarUrl ?? ""}
+          className={inputClass}
+        />
+      </Field>
+      <label className="flex items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="active"
+          defaultChecked={person?.active ?? true}
+          className="mt-0.5"
+        />
+        <span>
+          Active
+          <span className="mt-1 block text-xs text-muted-foreground">
+            Inactive people stay on past records and are not offered for new
+            responsibilities.
+          </span>
+        </span>
+      </label>
+      <FormError message={state?.error} />
+      <FormActions pending={pending} cancelHref={person ? `/people/${person.id}` : "/people"} />
+    </form>
+  );
+}

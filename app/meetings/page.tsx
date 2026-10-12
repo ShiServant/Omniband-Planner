@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DatabaseUnavailable } from "@/components/database-unavailable";
+import { EditLink } from "@/components/edit-link";
 import { PageHeader } from "@/components/page-header";
 import { ProjectLink } from "@/components/record-link";
+import { hasEditAccess } from "@/lib/admin/session";
 import { listMeetings } from "@/lib/data/meetings";
 import { formatDateTime } from "@/lib/format";
 
@@ -11,13 +13,19 @@ export const metadata: Metadata = {
 };
 
 export default async function MeetingsPage() {
-  const result = await listMeetings();
+  const [result, editing] = await Promise.all([
+    listMeetings(),
+    hasEditAccess(),
+  ]);
 
   return (
     <>
       <PageHeader
         title="Meetings"
         description="What was discussed, what was decided, and which actions came next."
+        action={
+          editing ? <EditLink href="/meetings/new">Add meeting</EditLink> : null
+        }
       />
       {result.configured ? (
         result.data.length > 0 ? (

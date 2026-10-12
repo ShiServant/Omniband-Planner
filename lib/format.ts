@@ -69,3 +69,88 @@ export function formatDateTime(value: string | null) {
 
   return formatted.replace(" at ", ", ");
 }
+
+const LONDON = "Europe/London";
+
+function londonParts(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: LONDON,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const read = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+
+  return {
+    year: read("year"),
+    month: read("month"),
+    day: read("day"),
+    hour: read("hour") === "24" ? "00" : read("hour"),
+    minute: read("minute"),
+  };
+}
+
+export function toDateTimeLocal(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const parts = londonParts(date);
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+
+export function fromDateTimeLocal(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
+
+  if (!match) {
+    return null;
+  }
+
+  const [, year, month, day, hour, minute] = match;
+  const desired = Date.UTC(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+  );
+  let utc = desired;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const parts = londonParts(new Date(utc));
+    const asLondon = Date.UTC(
+      Number(parts.year),
+      Number(parts.month) - 1,
+      Number(parts.day),
+      Number(parts.hour),
+      Number(parts.minute),
+    );
+    const next = utc - (asLondon - desired);
+
+    if (next === utc) {
+      break;
+    }
+
+    utc = next;
+  }
+
+  const check = londonParts(new Date(utc));
+
+  if (
+    check.year !== year ||
+    check.month !== month ||
+    check.day !== day ||
+    check.hour !== hour ||
+    check.minute !== minute
+  ) {
+    return null;
+  }
+
+  return new Date(utc).toISOString();
+}

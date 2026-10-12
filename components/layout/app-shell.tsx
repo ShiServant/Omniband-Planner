@@ -9,6 +9,7 @@ import {
   ListTodo,
   Users,
 } from "lucide-react";
+import { endEditMode } from "@/lib/actions/edit-mode";
 import { cn } from "cn";
 
 const items = [
@@ -60,26 +61,32 @@ function NavLinks({ compact = false }: { compact?: boolean }) {
 
 export function AppShell({
   siteName,
+  editing,
   children,
 }: {
   siteName: string;
+  editing: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
+      <aside className="hidden min-h-screen w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
         <div className="px-6 py-5">
           <p className="text-sm font-semibold tracking-tight">{siteName}</p>
         </div>
-        <nav aria-label="Primary" className="flex flex-col gap-1 px-3">
+        <nav aria-label="Primary" className="flex flex-1 flex-col gap-1 px-3">
           <NavLinks />
         </nav>
+        <div className="px-3 py-4">
+          <EditEntry editing={editing} />
+        </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="border-b border-sidebar-border bg-sidebar text-sidebar-foreground md:hidden">
-          <div className="px-4 py-3">
+          <div className="flex items-center justify-between gap-3 px-4 py-3">
             <p className="text-sm font-semibold tracking-tight">{siteName}</p>
+            <EditEntry editing={editing} />
           </div>
           <nav aria-label="Primary" className="flex flex-wrap gap-1 px-3 pb-3">
             <NavLinks compact />
@@ -88,5 +95,33 @@ export function AppShell({
         <main className="min-w-0 flex-1 px-6 py-8 lg:px-10">{children}</main>
       </div>
     </div>
+  );
+}
+
+function EditEntry({ editing }: { editing: boolean }) {
+  const pathname = usePathname() || "/";
+  const returnTo = pathname.startsWith("/admin") ? "/" : pathname;
+
+  if (editing) {
+    return (
+      <form action={endEditMode} className="flex items-center gap-3 px-3">
+        <span className="text-xs text-muted-foreground">Editing</span>
+        <button
+          type="submit"
+          className="text-xs font-medium underline-offset-4 hover:underline"
+        >
+          Done
+        </button>
+      </form>
+    );
+  }
+
+  return (
+    <Link
+      href={`/admin?returnTo=${encodeURIComponent(returnTo)}`}
+      className="px-3 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+    >
+      Edit
+    </Link>
   );
 }

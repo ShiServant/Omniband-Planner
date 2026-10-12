@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { markTaskDone } from "@/lib/actions/tasks";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { MeetingLink, PersonLink, ProjectLink } from "@/components/record-link";
 import { PriorityBadge, TaskStatusBadge } from "@/components/status-badge";
 import { formatDate } from "@/lib/format";
@@ -8,11 +11,13 @@ export function TaskList({
   showProject = true,
   showResponsible = true,
   showSource = true,
+  canEdit = false,
 }: {
   tasks: TaskSummary[];
   showProject?: boolean;
   showResponsible?: boolean;
   showSource?: boolean;
+  canEdit?: boolean;
 }) {
   return (
     <div className="overflow-x-auto rounded-lg border">
@@ -29,6 +34,11 @@ export function TaskList({
             <th className="px-4 py-2 font-medium">Due</th>
             <th className="px-4 py-2 font-medium">Status</th>
             <th className="px-4 py-2 font-medium">Priority</th>
+            {canEdit ? (
+              <th className="px-4 py-2 font-medium">
+                <span className="sr-only">Actions</span>
+              </th>
+            ) : null}
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -66,6 +76,26 @@ export function TaskList({
               <td className="px-4 py-3">
                 <PriorityBadge priority={task.priority} />
               </td>
+              {canEdit ? (
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/tasks/${task.id}/edit`}
+                      className={buttonVariants({ variant: "outline", size: "sm" })}
+                    >
+                      Edit
+                    </Link>
+                    {task.status !== "done" ? (
+                      <form action={markTaskDone}>
+                        <input type="hidden" name="id" value={task.id} />
+                        <Button type="submit" variant="outline" size="sm">
+                          Mark done
+                        </Button>
+                      </form>
+                    ) : null}
+                  </div>
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>

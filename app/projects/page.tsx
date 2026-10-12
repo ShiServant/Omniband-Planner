@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { DatabaseUnavailable } from "@/components/database-unavailable";
+import { EditLink } from "@/components/edit-link";
 import { PageHeader } from "@/components/page-header";
 import { ProjectSummaryList } from "@/components/project-summary-list";
 import { ProjectViewNav } from "@/components/project-view-nav";
+import { hasEditAccess } from "@/lib/admin/session";
 import { listProjects, type ProjectView } from "@/lib/data/projects";
 import { firstParam } from "@/lib/format";
 
@@ -24,7 +26,10 @@ export default async function ProjectsPage(
   const view = views.has(requested as Exclude<ProjectView, "all">)
     ? (requested as Exclude<ProjectView, "all">)
     : "active";
-  const result = await listProjects(view);
+  const [result, editing] = await Promise.all([
+    listProjects(view),
+    hasEditAccess(),
+  ]);
   const empty =
     view === "active"
       ? "No active projects."
@@ -37,6 +42,7 @@ export default async function ProjectsPage(
       <PageHeader
         title="Projects"
         description="All current, completed, and archived projects."
+        action={editing ? <EditLink href="/projects/new">Add project</EditLink> : null}
       />
       {result.configured ? (
         <>
