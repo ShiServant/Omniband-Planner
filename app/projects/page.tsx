@@ -48,7 +48,7 @@ export default async function ProjectsPage(
         <>
           <ProjectViewNav view={view} />
           {result.data.length > 0 ? (
-            <ProjectSummaryList projects={result.data} />
+            <ProjectSummaryList projects={result.data} canEdit={editing} />
           ) : (
             <p className="text-sm text-muted-foreground">{empty}</p>
           )}

@@ -182,5 +182,29 @@ export async function saveProject(
   }
 
   revalidatePath("/", "layout");
-  redirect(`/projects/${savedId}`);
+  return { id: savedId };
+}
+
+export async function deleteProject(formData: FormData) {
+  const id = field(formData, "id");
+
+  if (!isUuid(id)) {
+    return;
+  }
+
+  try {
+    await withAdminDb(async (db) => {
+      const { error } = await db.from("projects").delete().eq("id", id);
+
+      if (error) {
+        throwDb(error);
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    return;
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/projects");
 }

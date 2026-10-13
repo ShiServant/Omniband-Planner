@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import type { ActionState } from "@/lib/action-state";
 import { emptyToNull, field, firstIssue } from "@/lib/forms";
 import { isUuid } from "@/lib/format";
@@ -80,5 +79,5 @@ export async function savePerson(
   }
 
   revalidatePath("/", "layout");
-  redirect(`/people/${savedId}`);
+  return { id: savedId };
 }

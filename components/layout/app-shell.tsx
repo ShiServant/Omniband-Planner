@@ -110,7 +110,7 @@ function EditEntry({ editing }: { editing: boolean }) {
           type="submit"
           className="text-xs font-medium underline-offset-4 hover:underline"
         >
-          Done
+          Stop editing
         </button>
       </form>
     );

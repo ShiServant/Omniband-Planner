@@ -106,6 +106,7 @@ export function buildDashboard(
         {
           id: `task-${task.id}`,
           projectId: task.project.id,
+          taskId: task.id,
           title: task.title,
           detail: `${task.responsible.name} · ${task.project.name}`,
           dueDate: task.dueDate,

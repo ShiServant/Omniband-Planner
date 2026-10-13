@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { ActionState } from "@/lib/action-state";
 import { assertPeople, assertProjects } from "@/lib/admin/records";
 import { emptyToNull, field, firstIssue } from "@/lib/forms";
+import { safeReturnTo } from "@/lib/admin/token";
 import { isUuid } from "@/lib/format";
 import {
   EditAccessError,
@@ -49,8 +50,10 @@ export async function saveTask(
     due_date: emptyToNull(parsed.data.dueDate),
   };
 
+  let savedId = id;
+
   try {
-    await withAdminDb(async (db) => {
+    savedId = await withAdminDb(async (db) => {
       const existing = id
         ? await db
             .from("tasks")
@@ -89,21 +92,27 @@ export async function saveTask(
           throwDb(error);
         }
 
-        return;
+        return id;
       }
 
-      const { error } = await db.from("tasks").insert(payload);
+      const { data, error } = await db
+        .from("tasks")
+        .insert(payload)
+        .select("id")
+        .single();
 
       if (error) {
         throwDb(error);
       }
+
+      return String(data.id);
     });
   } catch (error) {
     return { error: messageFrom(error) };
   }
 
   revalidatePath("/", "layout");
-  redirect(`/projects/${parsed.data.projectId}`);
+  return { id: savedId };
 }
 
 export async function markTaskDone(formData: FormData) {
@@ -140,4 +149,38 @@ export async function markTaskDone(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
+}
+
+export async function deleteTask(formData: FormData) {
+  const id = field(formData, "id");
+  const returnTo = field(formData, "returnTo");
+
+  if (!isUuid(id)) {
+    return;
+  }
+
+  try {
+    await withAdminDb(async (db) => {
+      const { error } = await db.from("tasks").delete().eq("id", id);
+
+      if (error) {
+        throwDb(error);
+      }
+    });
+  } catch (error) {
+    if (error instanceof EditAccessError) {
+      redirect(
+        `/admin?returnTo=${encodeURIComponent(safeReturnTo(returnTo || "/tasks"))}`,
+      );
+    }
+
+    console.error(error);
+    return;
+  }
+
+  revalidatePath("/", "layout");
+
+  if (returnTo) {
+    redirect(safeReturnTo(returnTo));
+  }
 }

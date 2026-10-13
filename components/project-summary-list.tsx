@@ -1,3 +1,4 @@
+import { DeleteProjectButton } from "@/components/delete-project-button";
 import { PersonLink, ProjectLink } from "@/components/record-link";
 import {
   HealthBadge,
@@ -9,9 +10,11 @@ import type { ProjectSummary } from "@/lib/types";
 export function ProjectSummaryList({
   projects,
   variant = "full",
+  canEdit = false,
 }: {
   projects: ProjectSummary[];
   variant?: "full" | "compact";
+  canEdit?: boolean;
 }) {
   return (
     <div className="divide-y rounded-lg border">
@@ -19,7 +22,10 @@ export function ProjectSummaryList({
         <article key={project.id} className="px-4 py-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <ProjectLink project={project} className="font-medium" />
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {canEdit ? (
+                <DeleteProjectButton id={project.id} name={project.name} />
+              ) : null}
               <ProjectStatusBadge status={project.status} />
               {project.health ? <HealthBadge health={project.health} /> : null}
             </div>

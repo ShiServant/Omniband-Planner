@@ -1,21 +1,28 @@
 "use client";
 
-import { useActionState } from "react";
 import { savePerson } from "@/lib/actions/people";
 import {
   Field,
-  FormActions,
-  FormError,
+  SaveStatus,
   inputClass,
   textareaClass,
 } from "@/components/form-fields";
+import { useAutosave } from "@/components/use-autosave";
 import type { PersonSummary } from "@/lib/types";
 
 export function PersonForm({ person }: { person?: PersonSummary }) {
-  const [state, action, pending] = useActionState(savePerson, null);
+  const { formRef, phase, error, schedule } = useAutosave(
+    savePerson,
+    (id) => `/people/${id}/edit`,
+  );
 
   return (
-    <form action={action} className="flex max-w-xl flex-col gap-4">
+    <form
+      ref={formRef}
+      className="flex max-w-xl flex-col gap-4"
+      onInput={schedule}
+      onChange={schedule}
+    >
       {person ? <input type="hidden" name="id" value={person.id} /> : null}
       <Field label="Name">
         <input
@@ -70,8 +77,7 @@ export function PersonForm({ person }: { person?: PersonSummary }) {
           </span>
         </span>
       </label>
-      <FormError message={state?.error} />
-      <FormActions pending={pending} cancelHref={person ? `/people/${person.id}` : "/people"} />
+      <SaveStatus phase={phase} error={error} />
     </form>
   );
 }

@@ -1,15 +1,17 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import { saveProject } from "@/lib/actions/projects";
+import { DeleteProjectButton } from "@/components/delete-project-button";
+import { Button } from "@/components/ui/button";
 import {
   Field,
-  FormActions,
-  FormError,
+  SaveStatus,
   inputClass,
   personOptionLabel,
   textareaClass,
 } from "@/components/form-fields";
+import { useAutosave } from "@/components/use-autosave";
 import {
   healthLabel,
   projectStatusLabel,
@@ -36,7 +38,10 @@ export function ProjectForm({
   project?: ProjectDetail;
   people: PersonSummary[];
 }) {
-  const [state, action, pending] = useActionState(saveProject, null);
+  const { formRef, phase, error, schedule, saveNow } = useAutosave(
+    saveProject,
+    (id) => `/projects/${id}/edit`,
+  );
   const [status, setStatus] = useState<ProjectStatus>(
     project?.status ?? "planning",
   );
@@ -61,7 +66,14 @@ export function ProjectForm({
   );
 
   return (
-    <form action={action} className="flex max-w-2xl flex-col gap-4">
+    <div className="flex max-w-2xl flex-col gap-8">
+    <form
+      ref={formRef}
+      className="flex flex-col gap-4"
+      onInput={schedule}
+      onChange={schedule}
+      onSubmit={saveNow}
+    >
       {project ? <input type="hidden" name="id" value={project.id} /> : null}
       <Field label="Name">
         <input
@@ -266,11 +278,16 @@ export function ProjectForm({
           <p className="text-sm text-muted-foreground">No other active people.</p>
         )}
       </fieldset>
-      <FormError message={state?.error} />
-      <FormActions
-        pending={pending}
-        cancelHref={project ? `/projects/${project.id}` : "/projects"}
-      />
+      {project ? null : (
+        <div className="flex items-center gap-3">
+          <Button type="submit" disabled={phase === "saving"}>
+            {phase === "saving" ? "Saving…" : "Apply"}
+          </Button>
+        </div>
+      )}
+      <SaveStatus phase={phase} error={error} />
     </form>
+    {project ? <DeleteProjectButton id={project.id} name={project.name} /> : null}
+    </div>
   );
 }

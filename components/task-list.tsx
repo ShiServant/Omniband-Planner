@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { markTaskDone } from "@/lib/actions/tasks";
+import { DeleteTaskButton } from "@/components/delete-task-button";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { MeetingLink, PersonLink, ProjectLink } from "@/components/record-link";
 import { PriorityBadge, TaskStatusBadge } from "@/components/status-badge";
@@ -93,6 +94,7 @@ export function TaskList({
                         </Button>
                       </form>
                     ) : null}
+                    <DeleteTaskButton id={task.id} title={task.title} />
                   </div>
                 </td>
               ) : null}

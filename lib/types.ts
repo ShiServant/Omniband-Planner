@@ -122,6 +122,7 @@ export type DecisionSummary = {
 export type UpcomingItem = {
   id: string;
   projectId: string;
+  taskId?: string;
   title: string;
   detail: string;
   dueDate: string;

@@ -1,16 +1,17 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { deleteTask } from "@/lib/actions/tasks";
 import { saveMeeting } from "@/lib/actions/meetings";
 import {
   Field,
-  FormActions,
-  FormError,
+  SaveStatus,
   inputClass,
   personOptionLabel,
   textareaClass,
 } from "@/components/form-fields";
+import { useAutosave } from "@/components/use-autosave";
 import { priorityLabel, taskStatusLabel } from "@/lib/labels";
 import type {
   MeetingDetail,
@@ -56,7 +57,10 @@ export function MeetingForm({
   projects: ProjectSummary[];
   tasks: TaskSummary[];
 }) {
-  const [state, action, pending] = useActionState(saveMeeting, null);
+  const { formRef, phase, error, schedule } = useAutosave(
+    saveMeeting,
+    (id) => `/meetings/${id}/edit`,
+  );
   const [attendeeIds, setAttendeeIds] = useState(
     () => meeting?.attendees.map((person) => person.id) ?? [],
   );
@@ -93,7 +97,17 @@ export function MeetingForm({
   );
 
   return (
-    <form action={action} className="flex max-w-3xl flex-col gap-8">
+    <form
+      ref={formRef}
+      className="flex max-w-3xl flex-col gap-8"
+      onInput={schedule}
+      onChange={schedule}
+      onClick={(event) => {
+        if (event.target instanceof Element && event.target.closest("button")) {
+          schedule();
+        }
+      }}
+    >
       {meeting ? <input type="hidden" name="id" value={meeting.id} /> : null}
       <section className="flex flex-col gap-4">
         <h2 className="text-base font-semibold">Overview</h2>
@@ -169,7 +183,6 @@ export function MeetingForm({
             <Field label={`Decision ${index + 1}`}>
               <textarea
                 name="decisionContent"
-                required
                 value={decision.content}
                 onChange={(event) =>
                   updateDecision(decision.key, { content: event.target.value })
@@ -250,7 +263,6 @@ export function MeetingForm({
               <Field label={`Action ${index + 1}`}>
                 <input
                   name="actionTitle"
-                  required
                   value={row.title}
                   onChange={(event) =>
                     updateAction(row.key, { title: event.target.value })
@@ -272,7 +284,6 @@ export function MeetingForm({
                 <Field label="Responsible">
                   <select
                     name="actionResponsibleId"
-                    required
                     value={row.responsibleId}
                     onChange={(event) =>
                       updateAction(row.key, {
@@ -292,7 +303,6 @@ export function MeetingForm({
                 <Field label="Project">
                   <select
                     name="actionProjectId"
-                    required
                     value={row.projectId}
                     onChange={(event) =>
                       updateAction(row.key, { projectId: event.target.value })
@@ -357,7 +367,7 @@ export function MeetingForm({
                   </select>
                 </Field>
               </div>
-              <div>
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
                   variant="ghost"
@@ -370,6 +380,32 @@ export function MeetingForm({
                 >
                   Remove from meeting
                 </Button>
+                {row.id ? (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      const confirmed = window.confirm(
+                        `Delete ${row.title || "this task"}? This cannot be undone.`,
+                      );
+
+                      if (!confirmed) {
+                        return;
+                      }
+
+                      const data = new FormData();
+                      data.set("id", row.id);
+                      setActions((current) =>
+                        current.filter((item) => item.key !== row.key),
+                      );
+                      void deleteTask(data);
+                    }}
+                  >
+                    Delete
+                  </Button>
+                ) : null}
               </div>
             </div>
           );
@@ -436,11 +472,7 @@ export function MeetingForm({
         </div>
       </section>
 
-      <FormError message={state?.error} />
-      <FormActions
-        pending={pending}
-        cancelHref={meeting ? `/meetings/${meeting.id}` : "/meetings"}
-      />
+      <SaveStatus phase={phase} error={error} />
     </form>
   );
 

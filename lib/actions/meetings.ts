@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import type { ActionState } from "@/lib/action-state";
 import { assertPeople, assertProjects } from "@/lib/admin/records";
 import { emptyToNull, field, fields, firstIssue } from "@/lib/forms";
@@ -42,7 +41,13 @@ export async function saveMeeting(
       status: fields(formData, "actionStatus")[index] ?? "",
       priority: fields(formData, "actionPriority")[index] ?? "",
     }))
-    .filter((action) => action.id !== "" || action.title.trim() !== "");
+    .filter(
+      (action) =>
+        action.id !== "" ||
+        (action.title.trim() !== "" &&
+          action.responsiblePersonId !== "" &&
+          action.projectId !== ""),
+    );
   const parsed = meetingSchema.safeParse({
     title: field(formData, "title"),
     meetingLocal: field(formData, "meetingLocal"),
@@ -203,7 +208,7 @@ export async function saveMeeting(
   }
 
   revalidatePath("/", "layout");
-  redirect(`/meetings/${savedId}`);
+  return { id: savedId };
 }
 
 async function replaceRows(

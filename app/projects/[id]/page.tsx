@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DatabaseUnavailable } from "@/components/database-unavailable";
+import { DeleteProjectButton } from "@/components/delete-project-button";
 import { EditLink } from "@/components/edit-link";
 import { PageHeader } from "@/components/page-header";
 import { ProjectDetailView } from "@/components/project-detail";
@@ -50,7 +51,10 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
         title={result.data.name}
         action={
           editing ? (
-            <EditLink href={`/projects/${result.data.id}/edit`}>Edit</EditLink>
+            <div className="flex items-center gap-2">
+              <EditLink href={`/projects/${result.data.id}/edit`}>Edit</EditLink>
+              <DeleteProjectButton id={result.data.id} name={result.data.name} />
+            </div>
           ) : null
         }
       />

@@ -1,15 +1,15 @@
 "use client";
 
-import { useActionState } from "react";
 import { saveTask } from "@/lib/actions/tasks";
+import { DeleteTaskButton } from "@/components/delete-task-button";
 import {
   Field,
-  FormActions,
-  FormError,
+  SaveStatus,
   inputClass,
   personOptionLabel,
   textareaClass,
 } from "@/components/form-fields";
+import { useAutosave } from "@/components/use-autosave";
 import { priorityLabel, taskStatusLabel } from "@/lib/labels";
 import type {
   PersonSummary,
@@ -33,14 +33,23 @@ export function TaskForm({
   projects: ProjectSummary[];
   defaultProjectId?: string;
 }) {
-  const [state, action, pending] = useActionState(saveTask, null);
+  const { formRef, phase, error, schedule } = useAutosave(
+    saveTask,
+    (id) => `/tasks/${id}/edit`,
+  );
   const responsibleOptions = people.filter(
     (person) => person.active || person.id === task?.responsible.id,
   );
   const projectId = task?.project.id ?? defaultProjectId;
 
   return (
-    <form action={action} className="flex max-w-xl flex-col gap-4">
+    <div className="flex max-w-xl flex-col gap-8">
+    <form
+      ref={formRef}
+      className="flex flex-col gap-4"
+      onInput={schedule}
+      onChange={schedule}
+    >
       {task ? <input type="hidden" name="id" value={task.id} /> : null}
       <Field label="Title">
         <input
@@ -123,11 +132,15 @@ export function TaskForm({
           className={inputClass}
         />
       </Field>
-      <FormError message={state?.error} />
-      <FormActions
-        pending={pending}
-        cancelHref={projectId ? `/projects/${projectId}` : "/tasks"}
-      />
+      <SaveStatus phase={phase} error={error} />
     </form>
+    {task ? (
+      <DeleteTaskButton
+        id={task.id}
+        title={task.title}
+        returnTo={task.project.id ? `/projects/${task.project.id}` : "/tasks"}
+      />
+    ) : null}
+    </div>
   );
 }

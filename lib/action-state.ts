@@ -1,3 +1,4 @@
 export type ActionState = {
-  error: string;
+  error?: string;
+  id?: string;
 } | null;

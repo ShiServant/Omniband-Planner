@@ -1,3 +1,4 @@
+import { DeleteTaskButton } from "@/components/delete-task-button";
 import { ProjectSummaryList } from "@/components/project-summary-list";
 import { MeetingLink, ProjectLink } from "@/components/record-link";
 import { Section } from "@/components/section";
@@ -70,6 +71,9 @@ export function DashboardView({
                   <p className="text-sm text-muted-foreground">{item.detail}</p>
                 </div>
                 <p className="flex items-center gap-2 text-sm">
+                  {canEdit && item.taskId ? (
+                    <DeleteTaskButton id={item.taskId} title={item.title} />
+                  ) : null}
                   {item.overdue ? (
                     <StatusBadge tone="bad">Overdue</StatusBadge>
                   ) : null}
