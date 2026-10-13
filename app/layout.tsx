@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { cn } from "cn";
+import { EntryGate } from "@/components/entry-gate";
 import { AppShell } from "@/components/layout/app-shell";
 import { hasEditAccess } from "@/lib/admin/session";
 import { getSiteName } from "@/lib/site";
@@ -23,11 +24,30 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const editing = await hasEditAccess();
 
   return (
-    <html lang="en" className={cn("h-full font-sans", geist.variable)}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={cn("h-full font-sans", geist.variable)}
+    >
       <body className="min-h-full">
-        <AppShell siteName={siteName} editing={editing}>
-          {children}
-        </AppShell>
+        <style
+          dangerouslySetInnerHTML={{
+            __html:
+              "html[data-entered='1'] .entry-gate{display:none!important}",
+          }}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{if(sessionStorage.getItem("planner-entered")==="1"){document.documentElement.setAttribute("data-entered","1")}}catch(e){}',
+          }}
+        />
+        <EntryGate siteName={siteName} />
+        <div id="app">
+          <AppShell siteName={siteName} editing={editing}>
+            {children}
+          </AppShell>
+        </div>
       </body>
     </html>
   );

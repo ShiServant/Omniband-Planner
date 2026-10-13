@@ -1,20 +1,38 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { enableEditMode } from "@/lib/actions/edit-mode";
-import {
-  Field,
-  FormError,
-  inputClass,
-} from "@/components/form-fields";
+import { rememberEntry } from "@/lib/entry";
+import { Field, FormError, inputClass } from "@/components/form-fields";
 import { Button } from "@/components/ui/button";
 
 export function AdminForm({ returnTo }: { returnTo: string }) {
-  const [state, action, pending] = useActionState(enableEditMode, null);
+  const router = useRouter();
+  const [error, setError] = useState<string>();
+  const [pending, setPending] = useState(false);
 
   return (
-    <form action={action} className="flex max-w-sm flex-col gap-4">
-      <input type="hidden" name="returnTo" value={returnTo} />
+    <form
+      className="flex max-w-sm flex-col gap-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        setPending(true);
+        setError(undefined);
+        void enableEditMode(null, formData).then((result) => {
+          if (result?.error) {
+            setPending(false);
+            setError(result.error);
+            return;
+          }
+
+          rememberEntry();
+          router.push(returnTo);
+          router.refresh();
+        });
+      }}
+    >
       <Field label="Committee password">
         <input
           name="password"
@@ -24,7 +42,7 @@ export function AdminForm({ returnTo }: { returnTo: string }) {
           className={inputClass}
         />
       </Field>
-      <FormError message={state?.error} />
+      <FormError message={error} />
       <div>
         <Button type="submit" disabled={pending}>
           {pending ? "Checking…" : "Enable editing"}

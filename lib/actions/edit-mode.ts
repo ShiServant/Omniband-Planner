@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { ActionState } from "@/lib/action-state";
 import { clearEditCookie, setEditCookie } from "@/lib/admin/session";
-import { passwordsMatch, safeReturnTo } from "@/lib/admin/token";
+import { passwordsMatch } from "@/lib/admin/token";
 import { field } from "@/lib/forms";
 
 export async function enableEditMode(
@@ -12,7 +12,6 @@ export async function enableEditMode(
   formData: FormData,
 ): Promise<ActionState> {
   const password = field(formData, "password");
-  const returnTo = safeReturnTo(field(formData, "returnTo"));
   const expected = process.env.ADMIN_PASSWORD?.trim() ?? "";
   const secret = process.env.ADMIN_SESSION_SECRET?.trim() ?? "";
   const configured = expected.length > 0 && secret.length > 0;
@@ -24,7 +23,12 @@ export async function enableEditMode(
 
   await setEditCookie();
   revalidatePath("/", "layout");
-  redirect(returnTo);
+  return null;
+}
+
+export async function continueAsReadOnly() {
+  await clearEditCookie();
+  revalidatePath("/", "layout");
 }
 
 export async function endEditMode() {

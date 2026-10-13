@@ -2,11 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 import { cookies } from "next/headers";
-import {
-  createSessionValue,
-  readSession,
-  SESSION_MAX_AGE_SECONDS,
-} from "@/lib/admin/token";
+import { createSessionValue, readSession } from "@/lib/admin/token";
 
 const COOKIE = "edit_session";
 
@@ -40,7 +36,6 @@ export async function setEditCookie() {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: SESSION_MAX_AGE_SECONDS,
   });
 }
 
