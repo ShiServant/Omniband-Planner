@@ -5,7 +5,7 @@ import { failRead, one, type DataResult } from "@/lib/data/read";
 import { isUuid } from "@/lib/format";
 import { getReadClient } from "@/lib/supabase/read";
 import { compareTasks, mapTask, type TaskRow } from "@/lib/data/tasks";
-import type { DecisionSummary, MeetingDetail, MeetingSummary, NamedRef } from "@/lib/types";
+import type { DecisionSummary, MeetingDetail, MeetingFile, MeetingSummary, NamedRef } from "@/lib/types";
 
 type MeetingRow = {
   id: string;
@@ -124,13 +124,6 @@ type MeetingDetailRow = {
   title: string;
   meeting_date: string;
   summary: string | null;
-  discussion_notes: string | null;
-  attendees: Array<{
-    person:
-      | (NamedRef & { society_role: string | null; active: boolean })
-      | Array<NamedRef & { society_role: string | null; active: boolean }>
-      | null;
-  }> | null;
   discussed: Array<{
     project: NamedRef | NamedRef[] | null;
   }> | null;
@@ -163,10 +156,6 @@ export const getMeeting = cache(
         title,
         meeting_date,
         summary,
-        discussion_notes,
-        attendees:meeting_attendees (
-          person:people!person_id (id, name, society_role, active)
-        ),
         discussed:meeting_projects (
           project:projects!project_id (id, name)
         ),
@@ -209,25 +198,6 @@ export const getMeeting = cache(
         title: meeting.title,
         meetingDate: meeting.meeting_date,
         summary: meeting.summary,
-        discussionNotes: meeting.discussion_notes,
-        attendees: (meeting.attendees ?? [])
-          .flatMap((attendee) => {
-            const person = one(attendee.person);
-
-            if (!person) {
-              return [];
-            }
-
-            return [
-              {
-                id: person.id,
-                name: person.name,
-                societyRole: person.society_role,
-                active: person.active,
-              },
-            ];
-          })
-          .sort((a, b) => a.name.localeCompare(b.name, "en")),
         projects: (meeting.discussed ?? []).flatMap((item) => {
           const project = one(item.project);
           return project ? [project] : [];
@@ -240,7 +210,30 @@ export const getMeeting = cache(
             project: one(decision.project),
           })),
         tasks: (meeting.tasks ?? []).map(mapTask).sort(compareTasks),
+        files: await listMeetingFiles(client, id),
       },
     };
   },
 );
+
+async function listMeetingFiles(
+  client: NonNullable<ReturnType<typeof getReadClient>>,
+  meetingId: string,
+): Promise<MeetingFile[]> {
+  const { data, error } = await client
+    .from("meeting_files")
+    .select("id, file_name")
+    .eq("meeting_id", meetingId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    return [];
+  }
+
+  return ((data ?? []) as Array<{ id: string; file_name: string }>).map(
+    (file) => ({
+      id: file.id,
+      fileName: file.file_name,
+    }),
+  );
+}

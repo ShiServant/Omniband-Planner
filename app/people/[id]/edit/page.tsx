@@ -20,7 +20,10 @@ export default async function EditPersonPage(props: {
   if (!result.configured) {
     return (
       <>
-        <PageHeader title="Edit person" />
+        <PageHeader
+          title="Edit person"
+          back={{ href: "/people", label: "People" }}
+        />
         <DatabaseUnavailable />
       </>
     );
@@ -32,7 +35,10 @@ export default async function EditPersonPage(props: {
 
   return (
     <>
-      <PageHeader title={`Edit ${result.data.name}`} />
+      <PageHeader
+        title={`Edit ${result.data.name}`}
+        back={{ href: `/people/${result.data.id}`, label: "Person" }}
+      />
       <PersonForm person={result.data} />
     </>
   );

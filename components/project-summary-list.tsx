@@ -1,7 +1,6 @@
 import { DeleteProjectButton } from "@/components/delete-project-button";
 import { PersonLink, ProjectLink } from "@/components/record-link";
 import {
-  HealthBadge,
   ProjectStatusBadge,
 } from "@/components/status-badge";
 import { formatDate } from "@/lib/format";
@@ -27,7 +26,6 @@ export function ProjectSummaryList({
                 <DeleteProjectButton id={project.id} name={project.name} />
               ) : null}
               <ProjectStatusBadge status={project.status} />
-              {project.health ? <HealthBadge health={project.health} /> : null}
             </div>
           </div>
           {variant === "full" ? (
@@ -52,10 +50,6 @@ function FullMeta({ project }: { project: ProjectSummary }) {
     </>,
   ];
 
-  if (project.nextStep) {
-    parts.push(<>Next step {project.nextStep}</>);
-  }
-
   if (project.dueDate) {
     parts.push(<>Due {formatDate(project.dueDate)}</>);
   }
@@ -70,9 +64,6 @@ function FullMeta({ project }: { project: ProjectSummary }) {
           </span>
         ))}
       </p>
-      {project.blocker ? (
-        <p className="mt-1 text-sm">Blocker: {project.blocker}</p>
-      ) : null}
     </>
   );
 }

@@ -21,7 +21,10 @@ export default async function EditProjectPage(props: {
   if (!project.configured || !people.configured) {
     return (
       <>
-        <PageHeader title="Edit project" />
+        <PageHeader
+          title="Edit project"
+          back={{ href: "/projects", label: "Projects" }}
+        />
         <DatabaseUnavailable />
       </>
     );
@@ -33,7 +36,10 @@ export default async function EditProjectPage(props: {
 
   return (
     <>
-      <PageHeader title={`Edit ${project.data.name}`} />
+      <PageHeader
+        title={`Edit ${project.data.name}`}
+        back={{ href: `/projects/${project.data.id}`, label: "Project" }}
+      />
       <ProjectForm project={project.data} people={people.data} />
     </>
   );

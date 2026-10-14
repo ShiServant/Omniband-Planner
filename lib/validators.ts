@@ -128,8 +128,6 @@ export const meetingSchema = z
       .trim()
       .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "Enter a date and time."),
     summary: z.string().trim(),
-    discussionNotes: z.string().trim(),
-    attendeeIds: z.array(uuid),
     projectIds: z.array(uuid),
     decisions: z.array(decisionSchema),
     actions: z.array(actionSchema),
@@ -153,14 +151,6 @@ export const meetingSchema = z
         code: "custom",
         message: "An action item is listed more than once.",
         path: ["actions"],
-      });
-    }
-
-    if (new Set(value.attendeeIds).size !== value.attendeeIds.length) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Each attendee can only be added once.",
-        path: ["attendeeIds"],
       });
     }
   });

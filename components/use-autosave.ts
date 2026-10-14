@@ -20,8 +20,10 @@ export function useAutosave(
   const [phase, setPhase] = useState<"idle" | "saving" | "saved">("idle");
   const [error, setError] = useState<string>();
 
-  pathnameRef.current = pathname;
-  editPathRef.current = editPath;
+  useEffect(() => {
+    pathnameRef.current = pathname;
+    editPathRef.current = editPath;
+  }, [pathname, editPath]);
 
   useEffect(() => {
     const form = formRef.current;

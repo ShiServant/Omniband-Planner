@@ -81,11 +81,15 @@ export type MeetingDetail = {
   title: string;
   meetingDate: string;
   summary: string | null;
-  discussionNotes: string | null;
-  attendees: Array<NamedRef & { societyRole: string | null; active: boolean }>;
   projects: NamedRef[];
+  files: MeetingFile[];
   decisions: Array<{ id: string; content: string; project: NamedRef | null }>;
   tasks: TaskSummary[];
+};
+
+export type MeetingFile = {
+  id: string;
+  fileName: string;
 };
 
 export type PersonSummary = {

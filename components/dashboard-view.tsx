@@ -14,29 +14,8 @@ export function DashboardView({
   data: DashboardData;
   canEdit?: boolean;
 }) {
-  const counts = [
-    { label: "Active projects", value: data.counts.active },
-    { label: "On track", value: data.counts.onTrack },
-    { label: "Needs attention", value: data.counts.needsAttention },
-    { label: "Blocked", value: data.counts.blocked },
-  ];
-
   return (
     <>
-      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4">
-        {counts.map((count) => (
-          <div key={count.label} className="bg-background px-4 py-3">
-            <dt className="text-xs text-muted-foreground">{count.label}</dt>
-            <dd className="mt-1 text-2xl font-semibold tabular-nums">
-              {count.value}
-            </dd>
-          </div>
-        ))}
-      </dl>
-      <p className="mt-2 text-xs text-muted-foreground">
-        On track, needs attention, and blocked count the active projects.
-      </p>
-
       <Section title="Active projects" prominent>
         {data.activeProjects.length > 0 ? (
           <ProjectSummaryList projects={data.activeProjects} />
@@ -45,17 +24,7 @@ export function DashboardView({
         )}
       </Section>
 
-      <Section title="Needs attention and blocked" prominent>
-        {data.attentionProjects.length > 0 ? (
-          <ProjectSummaryList projects={data.attentionProjects} />
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Nothing is blocked or needs attention.
-          </p>
-        )}
-      </Section>
-
-      <Section title="Upcoming milestones and deadlines" prominent>
+      <Section title="Upcoming deadlines" prominent>
         {data.upcoming.length > 0 ? (
           <ul className="divide-y rounded-lg border">
             {data.upcoming.map((item) => (

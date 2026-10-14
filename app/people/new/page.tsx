@@ -15,6 +15,7 @@ export default async function NewPersonPage() {
       <PageHeader
         title="New person"
         description="Add someone the committee can assign work to."
+        back={{ href: "/people", label: "People" }}
       />
       <PersonForm />
     </>

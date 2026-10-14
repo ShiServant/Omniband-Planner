@@ -1,11 +1,7 @@
 import { PersonAvatar } from "@/components/person-avatar";
 import { ProjectLink } from "@/components/record-link";
 import { Section } from "@/components/section";
-import {
-  HealthBadge,
-  ProjectStatusBadge,
-  StatusBadge,
-} from "@/components/status-badge";
+import { ProjectStatusBadge, StatusBadge } from "@/components/status-badge";
 import { TaskList } from "@/components/task-list";
 import type { PersonDetail } from "@/lib/types";
 
@@ -69,10 +65,7 @@ export function PersonDetailView({
                   <ProjectLink project={project} className="font-medium" />
                   <span className="text-muted-foreground"> · {project.role}</span>
                 </span>
-                <span className="flex gap-2">
-                  <ProjectStatusBadge status={project.status} />
-                  {project.health ? <HealthBadge health={project.health} /> : null}
-                </span>
+                <ProjectStatusBadge status={project.status} />
               </li>
             ))}
           </ul>

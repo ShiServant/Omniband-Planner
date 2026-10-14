@@ -34,7 +34,8 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
       <>
         <PageHeader
           title="Project"
-          description="What this project is, who leads it, and what happens next."
+          description="What this project is, and who leads it."
+          back={{ href: "/projects", label: "Projects" }}
         />
         <DatabaseUnavailable />
       </>
@@ -49,6 +50,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
     <>
       <PageHeader
         title={result.data.name}
+        back={{ href: "/projects", label: "Projects" }}
         action={
           editing ? (
             <div className="flex items-center gap-2">

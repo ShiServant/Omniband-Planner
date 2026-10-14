@@ -34,7 +34,10 @@ export default async function EditMeetingPage(props: {
   ) {
     return (
       <>
-        <PageHeader title="Edit meeting" />
+        <PageHeader
+          title="Edit meeting"
+          back={{ href: "/meetings", label: "Meetings" }}
+        />
         <DatabaseUnavailable />
       </>
     );
@@ -46,7 +49,10 @@ export default async function EditMeetingPage(props: {
 
   return (
     <>
-      <PageHeader title={`Edit ${meeting.data.title}`} />
+      <PageHeader
+        title={`Edit ${meeting.data.title}`}
+        back={{ href: `/meetings/${meeting.data.id}`, label: "Meeting" }}
+      />
       <MeetingForm
         meeting={meeting.data}
         meetingLocal={toDateTimeLocal(meeting.data.meetingDate)}

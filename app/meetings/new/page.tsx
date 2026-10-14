@@ -22,7 +22,10 @@ export default async function NewMeetingPage() {
   if (!people.configured || !projects.configured || !tasks.configured) {
     return (
       <>
-        <PageHeader title="New meeting" />
+        <PageHeader
+          title="New meeting"
+          back={{ href: "/meetings", label: "Meetings" }}
+        />
         <DatabaseUnavailable />
       </>
     );
@@ -32,7 +35,8 @@ export default async function NewMeetingPage() {
     <>
       <PageHeader
         title="New meeting"
-        description="Record who attended, what was decided, and which actions came next."
+        description="Record what was decided, and which actions came next."
+        back={{ href: "/meetings", label: "Meetings" }}
       />
       <MeetingForm
         meetingLocal=""

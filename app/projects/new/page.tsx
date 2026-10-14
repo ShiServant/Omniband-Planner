@@ -17,7 +17,8 @@ export default async function NewProjectPage() {
     <>
       <PageHeader
         title="New project"
-        description="Record what is happening, who leads it, and what comes next."
+        description="Record the project and who leads it."
+        back={{ href: "/projects", label: "Projects" }}
       />
       {!people.configured ? (
         <DatabaseUnavailable />

@@ -33,7 +33,8 @@ export default async function MeetingPage(props: PageProps<"/meetings/[id]">) {
       <>
         <PageHeader
           title="Meeting"
-          description="Who attended, what was decided, and which actions came next."
+          description="What was decided, and which actions came next."
+          back={{ href: "/meetings", label: "Meetings" }}
         />
         <DatabaseUnavailable />
       </>
@@ -48,6 +49,7 @@ export default async function MeetingPage(props: PageProps<"/meetings/[id]">) {
     <>
       <PageHeader
         title={result.data.title}
+        back={{ href: "/meetings", label: "Meetings" }}
         action={
           editing ? (
             <EditLink href={`/meetings/${result.data.id}/edit`}>Edit</EditLink>

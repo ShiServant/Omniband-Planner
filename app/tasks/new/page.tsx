@@ -25,7 +25,10 @@ export default async function NewTaskPage(props: {
   if (!people.configured || !projects.configured) {
     return (
       <>
-        <PageHeader title="New task" />
+        <PageHeader
+          title="New task"
+          back={{ href: "/tasks", label: "Tasks" }}
+        />
         <DatabaseUnavailable />
       </>
     );
@@ -39,6 +42,7 @@ export default async function NewTaskPage(props: {
       <PageHeader
         title="New task"
         description="Record the work and the person responsible for it."
+        back={{ href: "/tasks", label: "Tasks" }}
       />
       {ready ? (
         <TaskForm

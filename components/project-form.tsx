@@ -12,16 +12,8 @@ import {
   textareaClass,
 } from "@/components/form-fields";
 import { useAutosave } from "@/components/use-autosave";
-import {
-  healthLabel,
-  projectStatusLabel,
-} from "@/lib/labels";
-import type {
-  PersonSummary,
-  ProjectDetail,
-  ProjectHealth,
-  ProjectStatus,
-} from "@/lib/types";
+import { projectStatusLabel } from "@/lib/labels";
+import type { PersonSummary, ProjectDetail, ProjectStatus } from "@/lib/types";
 
 const statuses: ProjectStatus[] = [
   "planning",
@@ -29,7 +21,6 @@ const statuses: ProjectStatus[] = [
   "completed",
   "archived",
 ];
-const healths: ProjectHealth[] = ["on_track", "at_risk", "blocked"];
 
 export function ProjectForm({
   project,
@@ -45,9 +36,6 @@ export function ProjectForm({
   const [status, setStatus] = useState<ProjectStatus>(
     project?.status ?? "planning",
   );
-  const [health, setHealth] = useState<ProjectHealth>(
-    project?.health ?? "on_track",
-  );
   const [leadId, setLeadId] = useState(project?.lead.id ?? "");
   const [members, setMembers] = useState(
     () =>
@@ -55,7 +43,6 @@ export function ProjectForm({
         .filter((member) => member.id !== project.lead.id)
         .map((member) => ({ id: member.id, role: member.role })) ?? [],
   );
-  const active = status === "planning" || status === "in_progress";
   const leadOptions = people.filter(
     (person) => person.active || person.id === project?.lead.id,
   );
@@ -83,55 +70,22 @@ export function ProjectForm({
           className={inputClass}
         />
       </Field>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Status">
-          <select
-            name="status"
-            value={status}
-            onChange={(event) => {
-              const next = event.target.value as ProjectStatus;
-              setStatus(next);
-
-              if (next === "planning" || next === "in_progress") {
-                setHealth((current) => current || "on_track");
-              }
-            }}
-            className={inputClass}
-          >
-            {statuses.map((item) => (
-              <option key={item} value={item}>
-                {projectStatusLabel(item)}
-              </option>
-            ))}
-          </select>
-        </Field>
-        {active ? (
-          <Field label="Health">
-            <select
-              name="health"
-              value={health}
-              onChange={(event) =>
-                setHealth(event.target.value as ProjectHealth)
-              }
-              className={inputClass}
-            >
-              {healths.map((item) => (
-                <option key={item} value={item}>
-                  {healthLabel(item)}
-                </option>
-              ))}
-            </select>
-          </Field>
-        ) : (
-          <input type="hidden" name="health" value="" />
-        )}
-      </div>
-      {!active ? (
-        <p className="text-xs text-muted-foreground">
-          Completed and archived projects leave the active list and have no
-          health status.
-        </p>
-      ) : null}
+      <Field label="Status">
+        <select
+          name="status"
+          value={status}
+          onChange={(event) => {
+            setStatus(event.target.value as ProjectStatus);
+          }}
+          className={inputClass}
+        >
+          {statuses.map((item) => (
+            <option key={item} value={item}>
+              {projectStatusLabel(item)}
+            </option>
+          ))}
+        </select>
+      </Field>
       <Field label="Lead">
         <select
           name="leadPersonId"
@@ -172,59 +126,10 @@ export function ProjectForm({
           />
         </Field>
       </div>
-      <Field
-        label="Progress"
-        hint="Optional. Shown as a small percentage, not a progress bar."
-      >
-        <input
-          name="progress"
-          type="number"
-          min={0}
-          max={100}
-          step={1}
-          defaultValue={project?.progress ?? ""}
-          className={inputClass}
-        />
-      </Field>
       <Field label="Description">
         <textarea
           name="description"
           defaultValue={project?.description ?? ""}
-          className={textareaClass}
-        />
-      </Field>
-      <Field label="Objective">
-        <textarea
-          name="objective"
-          defaultValue={project?.objective ?? ""}
-          className={textareaClass}
-        />
-      </Field>
-      <Field label="Current update">
-        <textarea
-          name="currentUpdate"
-          defaultValue={project?.currentUpdate ?? ""}
-          className={textareaClass}
-        />
-      </Field>
-      <Field label="Next step">
-        <textarea
-          name="nextStep"
-          defaultValue={project?.nextStep ?? ""}
-          className={textareaClass}
-        />
-      </Field>
-      <Field label="Next milestone">
-        <input
-          name="nextMilestone"
-          defaultValue={project?.nextMilestone ?? ""}
-          className={inputClass}
-        />
-      </Field>
-      <Field label="Blocker">
-        <textarea
-          name="blocker"
-          defaultValue={project?.blocker ?? ""}
           className={textareaClass}
         />
       </Field>

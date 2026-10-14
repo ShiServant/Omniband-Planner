@@ -34,6 +34,7 @@ export default async function PersonPage(props: PageProps<"/people/[id]">) {
         <PageHeader
           title="Person"
           description="Who this person is, which projects they are on, and what they are responsible for."
+          back={{ href: "/people", label: "People" }}
         />
         <DatabaseUnavailable />
       </>
@@ -48,6 +49,7 @@ export default async function PersonPage(props: PageProps<"/people/[id]">) {
     <>
       <PageHeader
         title={result.data.name}
+        back={{ href: "/people", label: "People" }}
         action={
           editing ? (
             <EditLink href={`/people/${result.data.id}/edit`}>Edit</EditLink>

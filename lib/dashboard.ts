@@ -88,10 +88,8 @@ export function buildDashboard(
         {
           id: `project-${project.id}`,
           projectId: project.id,
-          title: project.nextMilestone ?? project.name,
-          detail: project.nextMilestone
-            ? `${project.name} · Lead ${project.lead.name}`
-            : `Lead ${project.lead.name}`,
+          title: project.name,
+          detail: `Lead ${project.lead.name}`,
           dueDate: project.dueDate,
           overdue: project.dueDate < today,
         },

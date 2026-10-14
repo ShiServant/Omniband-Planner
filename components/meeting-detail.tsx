@@ -1,4 +1,4 @@
-import { PersonLink, ProjectLink } from "@/components/record-link";
+import { ProjectLink } from "@/components/record-link";
 import { Section } from "@/components/section";
 import { TaskList } from "@/components/task-list";
 import { formatDateTime } from "@/lib/format";
@@ -18,27 +18,6 @@ export function MeetingDetailView({
           {formatDateTime(meeting.meetingDate)}
         </time>
       </p>
-
-      <Section title="Attendees">
-        {meeting.attendees.length > 0 ? (
-          <p className="text-sm">
-            {meeting.attendees.map((person, index) => (
-              <span key={person.id}>
-                {index > 0 ? ", " : null}
-                <PersonLink person={person} />
-                {person.societyRole ? (
-                  <span className="text-muted-foreground">
-                    {" "}
-                    ({person.societyRole})
-                  </span>
-                ) : null}
-              </span>
-            ))}
-          </p>
-        ) : (
-          <p className="text-sm text-muted-foreground">No attendees recorded.</p>
-        )}
-      </Section>
 
       <Section title="Projects discussed">
         {meeting.projects.length > 0 ? (
@@ -63,10 +42,23 @@ export function MeetingDetailView({
         </p>
       </Section>
 
-      <Section title="Discussion notes">
-        <p className="max-w-3xl text-sm leading-6 whitespace-pre-wrap">
-          {meeting.discussionNotes || "No discussion notes recorded."}
-        </p>
+      <Section title="Files">
+        {meeting.files.length > 0 ? (
+          <ul className="flex flex-col gap-2 text-sm">
+            {meeting.files.map((file) => (
+              <li key={file.id}>
+                <a
+                  href={`/meetings/${meeting.id}/files/${file.id}`}
+                  className="underline-offset-4 hover:underline"
+                >
+                  {file.fileName}
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">No files attached.</p>
+        )}
       </Section>
 
       <Section title="Decisions" prominent>

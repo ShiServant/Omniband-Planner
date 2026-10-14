@@ -52,8 +52,6 @@ export async function saveMeeting(
     title: field(formData, "title"),
     meetingLocal: field(formData, "meetingLocal"),
     summary: field(formData, "summary"),
-    discussionNotes: field(formData, "discussionNotes"),
-    attendeeIds: fields(formData, "attendeeId").filter(isUuid),
     projectIds: fields(formData, "projectId").filter(isUuid),
     decisions,
     actions,
@@ -73,17 +71,6 @@ export async function saveMeeting(
 
   try {
     savedId = await withAdminDb(async (db) => {
-      const existingAttendees = id
-        ? await db
-            .from("meeting_attendees")
-            .select("person_id")
-            .eq("meeting_id", id)
-        : { data: [], error: null };
-
-      if (existingAttendees.error) {
-        throwDb(existingAttendees.error);
-      }
-
       if (id) {
         const existing = await db
           .from("meetings")
@@ -129,11 +116,7 @@ export async function saveMeeting(
         }
       }
 
-      const allowedInactive = new Set<string>(
-        ((existingAttendees.data ?? []) as Array<{ person_id: string }>).map(
-          (attendee) => attendee.person_id,
-        ),
-      );
+      const allowedInactive = new Set<string>();
 
       for (const action of parsed.data.actions) {
         const current = action.id ? tasksById.get(action.id) : undefined;
@@ -145,10 +128,7 @@ export async function saveMeeting(
 
       await assertPeople(
         db,
-        [
-          ...parsed.data.attendeeIds,
-          ...parsed.data.actions.map((action) => action.responsiblePersonId),
-        ],
+        parsed.data.actions.map((action) => action.responsiblePersonId),
         allowedInactive,
       );
       await assertProjects(db, [
@@ -163,7 +143,6 @@ export async function saveMeeting(
         title: parsed.data.title,
         meeting_date: meetingDate,
         summary: emptyToNull(parsed.data.summary),
-        discussion_notes: emptyToNull(parsed.data.discussionNotes),
       };
       let meetingId = id;
 
@@ -190,16 +169,13 @@ export async function saveMeeting(
         meetingId = String(data.id);
       }
 
-      await replaceRows(db, "meeting_attendees", meetingId, parsed.data.attendeeIds.map((personId) => ({
-        meeting_id: meetingId,
-        person_id: personId,
-      })));
       await replaceRows(db, "meeting_projects", meetingId, parsed.data.projectIds.map((projectId) => ({
         meeting_id: meetingId,
         project_id: projectId,
       })));
       await syncDecisions(db, meetingId, parsed.data.decisions);
       await syncActions(db, meetingId, parsed.data.actions);
+      await syncFiles(db, meetingId, formData);
 
       return meetingId;
     });
@@ -209,6 +185,66 @@ export async function saveMeeting(
 
   revalidatePath("/", "layout");
   return { id: savedId };
+}
+
+const MAX_FILE_BYTES = 4 * 1024 * 1024;
+
+async function syncFiles(
+  db: Parameters<Parameters<typeof withAdminDb>[0]>[0],
+  meetingId: string,
+  formData: FormData,
+) {
+  const removeIds = fields(formData, "removeFileId").filter(isUuid);
+
+  if (removeIds.length > 0) {
+    const removed = await db
+      .from("meeting_files")
+      .delete()
+      .eq("meeting_id", meetingId)
+      .in("id", removeIds);
+
+    if (removed.error) {
+      throwFileError(removed.error);
+    }
+  }
+
+  const attachments = formData
+    .getAll("attachment")
+    .filter((item): item is File => item instanceof File && item.size > 0);
+
+  for (const file of attachments) {
+    if (file.size > MAX_FILE_BYTES) {
+      throw new SaveError("Each file must be 4 MB or smaller.");
+    }
+
+    const bytes = Buffer.from(await file.arrayBuffer());
+    const inserted = await db.from("meeting_files").insert({
+      meeting_id: meetingId,
+      file_name: file.name.trim().slice(0, 200) || "file",
+      content_type: file.type || "application/octet-stream",
+      content_base64: bytes.toString("base64"),
+    });
+
+    if (inserted.error) {
+      throwFileError(inserted.error);
+    }
+  }
+}
+
+function throwFileError(error: { code?: string; message?: string }) {
+  const text = error.message ?? "";
+  const missing =
+    error.code === "42P01" ||
+    error.code === "PGRST205" ||
+    text.toLowerCase().includes("meeting_files");
+
+  if (missing) {
+    throw new SaveError(
+      "File attachments are not available yet. Add the latest database migration in Supabase.",
+    );
+  }
+
+  throwDb(error);
 }
 
 async function replaceRows(

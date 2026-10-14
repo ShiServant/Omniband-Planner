@@ -26,7 +26,10 @@ export default async function EditTaskPage(props: {
   if (!task.configured || !people.configured || !projects.configured) {
     return (
       <>
-        <PageHeader title="Edit task" />
+        <PageHeader
+          title="Edit task"
+          back={{ href: "/tasks", label: "Tasks" }}
+        />
         <DatabaseUnavailable />
       </>
     );
@@ -38,7 +41,10 @@ export default async function EditTaskPage(props: {
 
   return (
     <>
-      <PageHeader title={`Edit ${task.data.title}`} />
+      <PageHeader
+        title={`Edit ${task.data.title}`}
+        back={{ href: "/tasks", label: "Tasks" }}
+      />
       <TaskForm task={task.data} people={people.data} projects={projects.data} />
     </>
   );

@@ -21,18 +21,6 @@ export async function saveProject(
 
   const status = field(formData, "status");
   const active = status === "planning" || status === "in_progress";
-  const health = active ? field(formData, "health") : "";
-  const progressRaw = field(formData, "progress").trim();
-  let progress: number | null = null;
-
-  if (progressRaw !== "") {
-    if (!/^\d+$/.test(progressRaw)) {
-      return { error: "Progress must be a whole number from 0 to 100." };
-    }
-
-    progress = Number(progressRaw);
-  }
-
   const leadPersonId = field(formData, "leadPersonId");
   const memberIds = [
     ...new Set(
@@ -44,16 +32,16 @@ export async function saveProject(
   const parsed = projectSchema.safeParse({
     name: field(formData, "name"),
     description: field(formData, "description"),
-    objective: field(formData, "objective"),
+    objective: "",
     status,
-    health: health || null,
-    progress,
+    health: active ? "on_track" : null,
+    progress: null,
     startDate: field(formData, "startDate"),
     dueDate: field(formData, "dueDate"),
-    currentUpdate: field(formData, "currentUpdate"),
-    nextStep: field(formData, "nextStep"),
-    nextMilestone: field(formData, "nextMilestone"),
-    blocker: field(formData, "blocker"),
+    currentUpdate: "",
+    nextStep: "",
+    nextMilestone: "",
+    blocker: "",
     leadPersonId,
     memberIds,
   });

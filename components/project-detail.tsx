@@ -2,10 +2,7 @@ import { EditLink } from "@/components/edit-link";
 import { PersonAvatar } from "@/components/person-avatar";
 import { PersonLink } from "@/components/record-link";
 import { Section } from "@/components/section";
-import {
-  HealthBadge,
-  ProjectStatusBadge,
-} from "@/components/status-badge";
+import { ProjectStatusBadge } from "@/components/status-badge";
 import { TaskList } from "@/components/task-list";
 import { formatDate } from "@/lib/format";
 import type { ProjectDetail } from "@/lib/types";
@@ -25,7 +22,6 @@ export function ProjectDetailView({
     <>
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <ProjectStatusBadge status={project.status} />
-        {project.health ? <HealthBadge health={project.health} /> : null}
       </div>
       <p className="mt-3 text-sm text-muted-foreground">
         Lead <PersonLink person={project.lead} />
@@ -37,29 +33,10 @@ export function ProjectDetailView({
             Started {formatDate(project.startDate)}
           </>
         ) : null}
-        {project.progress !== null ? (
-          <>
-            <span aria-hidden> · </span>
-            Progress {project.progress}%
-          </>
-        ) : null}
       </p>
       {project.description ? (
         <p className="mt-6 max-w-3xl text-sm leading-6">{project.description}</p>
       ) : null}
-      {project.objective ? (
-        <p className="mt-3 max-w-3xl text-sm leading-6">
-          <span className="font-medium">Objective. </span>
-          {project.objective}
-        </p>
-      ) : null}
-
-      <dl className="mt-8 grid gap-6 sm:grid-cols-2">
-        <Info label="Current update" value={project.currentUpdate} />
-        <Info label="Next step" value={project.nextStep} />
-        <Info label="Next milestone" value={project.nextMilestone} />
-        <Info label="Blocker" value={project.blocker} />
-      </dl>
 
       <Section title="Team">
         <ul className="divide-y rounded-lg border">
@@ -160,16 +137,5 @@ export function ProjectDetailView({
         )}
       </Section>
     </>
-  );
-}
-
-function Info({ label, value }: { label: string; value: string | null }) {
-  return (
-    <div>
-      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className="mt-1 max-w-xl text-sm leading-6">
-        {value || "None recorded."}
-      </dd>
-    </div>
   );
 }
