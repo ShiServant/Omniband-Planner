@@ -6,6 +6,7 @@ import type { ActionState } from "@/lib/action-state";
 import { assertProjects } from "@/lib/admin/records";
 import { emptyToNull, field, fields, firstIssue } from "@/lib/forms";
 import { fromDateTimeLocal, isUuid } from "@/lib/format";
+import { syncAttachments } from "@/lib/files";
 import { SaveError, messageFrom, throwDb, withAdminDb } from "@/lib/supabase/admin";
 import { meetingSchema } from "@/lib/validators";
 
@@ -97,7 +98,13 @@ export async function saveMeeting(
           project_id: projectId,
         })),
       );
-      await syncFiles(db, meetingId, formData);
+      await syncAttachments(
+        db,
+        "meeting_files",
+        "meeting_id",
+        meetingId,
+        formData,
+      );
 
       return meetingId;
     });
@@ -131,66 +138,6 @@ export async function deleteMeeting(formData: FormData) {
 
   revalidatePath("/", "layout");
   redirect("/meetings");
-}
-
-const MAX_FILE_BYTES = 4 * 1024 * 1024;
-
-async function syncFiles(
-  db: Parameters<Parameters<typeof withAdminDb>[0]>[0],
-  meetingId: string,
-  formData: FormData,
-) {
-  const removeIds = fields(formData, "removeFileId").filter(isUuid);
-
-  if (removeIds.length > 0) {
-    const removed = await db
-      .from("meeting_files")
-      .delete()
-      .eq("meeting_id", meetingId)
-      .in("id", removeIds);
-
-    if (removed.error) {
-      throwFileError(removed.error);
-    }
-  }
-
-  const attachments = formData
-    .getAll("attachment")
-    .filter((item): item is File => item instanceof File && item.size > 0);
-
-  for (const file of attachments) {
-    if (file.size > MAX_FILE_BYTES) {
-      throw new SaveError("Each file must be 4 MB or smaller.");
-    }
-
-    const bytes = Buffer.from(await file.arrayBuffer());
-    const inserted = await db.from("meeting_files").insert({
-      meeting_id: meetingId,
-      file_name: file.name.trim().slice(0, 200) || "file",
-      content_type: file.type || "application/octet-stream",
-      content_base64: bytes.toString("base64"),
-    });
-
-    if (inserted.error) {
-      throwFileError(inserted.error);
-    }
-  }
-}
-
-function throwFileError(error: { code?: string; message?: string }) {
-  const text = error.message ?? "";
-  const missing =
-    error.code === "42P01" ||
-    error.code === "PGRST205" ||
-    text.toLowerCase().includes("meeting_files");
-
-  if (missing) {
-    throw new SaveError(
-      "File attachments are not available yet. Add the latest database migration in Supabase.",
-    );
-  }
-
-  throwDb(error);
 }
 
 async function replaceRows(

@@ -2,6 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 import { failRead, one, type DataResult } from "@/lib/data/read";
+import { listAttachments, loadTaskFiles } from "@/lib/files";
 import { isUuid } from "@/lib/format";
 import { getReadClient } from "@/lib/supabase/read";
 import type {
@@ -224,7 +225,16 @@ export const getProject = cache(
       })
       .sort((a, b) => a.name.localeCompare(b.name, "en"));
 
-    const tasks = taskRows.map(mapTask).sort(compareTasks);
+    const tasks = await loadTaskFiles(
+      client,
+      taskRows.map(mapTask).sort(compareTasks),
+    );
+    const files = await listAttachments(
+      client,
+      "project_files",
+      "project_id",
+      id,
+    );
     const meetings = ((meetingsResult.data ?? []) as MeetingLinkRow[])
       .flatMap((link) => {
         const meeting = one(link.meeting);
@@ -256,6 +266,7 @@ export const getProject = cache(
         ],
         tasks,
         meetings,
+        files,
       },
     };
   },

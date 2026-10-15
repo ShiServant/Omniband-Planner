@@ -50,6 +50,7 @@ export type TaskSummary = {
   project: NamedRef;
   responsible: NamedRef;
   sourceMeeting: { id: string; title: string } | null;
+  files: Attachment[];
 };
 
 export type ProjectDetail = ProjectSummary & {
@@ -63,6 +64,7 @@ export type ProjectDetail = ProjectSummary & {
     meetingDate: string;
     summary: string | null;
   }>;
+  files: Attachment[];
 };
 
 export type MeetingSummary = {
@@ -82,10 +84,12 @@ export type MeetingDetail = {
   files: MeetingFile[];
 };
 
-export type MeetingFile = {
+export type Attachment = {
   id: string;
   fileName: string;
 };
+
+export type MeetingFile = Attachment;
 
 export type PersonSummary = {
   id: string;

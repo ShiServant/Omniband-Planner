@@ -1,6 +1,7 @@
 "use client";
 
 import { saveTask } from "@/lib/actions/tasks";
+import { RecordFiles, useRecordFiles } from "@/components/record-files";
 import { DeleteTaskButton } from "@/components/delete-task-button";
 import {
   Field,
@@ -10,6 +11,7 @@ import {
   textareaClass,
 } from "@/components/form-fields";
 import { useAutosave } from "@/components/use-autosave";
+import type { ActionState } from "@/lib/action-state";
 import { priorityLabel, taskStatusLabel } from "@/lib/labels";
 import type {
   PersonSummary,
@@ -33,8 +35,20 @@ export function TaskForm({
   projects: ProjectSummary[];
   defaultProjectId?: string;
 }) {
+  const files = useRecordFiles();
   const { formRef, phase, error, schedule } = useAutosave(
-    saveTask,
+    async (previous: ActionState, formData: FormData) => {
+      const taken = files.take(formData);
+      const result = await saveTask(previous, formData);
+
+      if (result?.error) {
+        files.restore(taken);
+        return result;
+      }
+
+      files.clear();
+      return result;
+    },
     (id) => `/tasks/${id}/edit`,
   );
   const responsibleOptions = people.filter(
@@ -144,6 +158,13 @@ export function TaskForm({
           className={inputClass}
         />
       </Field>
+      <RecordFiles
+        files={task?.files ?? []}
+        recordId={task?.id}
+        downloadPath={(id, fileId) => `/tasks/${id}/files/${fileId}`}
+        pending={files}
+        onChange={schedule}
+      />
       <SaveStatus phase={phase} error={error} />
     </form>
     {task ? (

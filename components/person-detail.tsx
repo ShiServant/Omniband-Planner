@@ -19,16 +19,9 @@ export function PersonDetailView({
     <>
       <div className="flex items-start gap-4">
         <PersonAvatar name={person.name} url={person.avatarUrl} size="md" />
-        <div>
-          {person.societyRole ? (
-            <p className="text-sm text-muted-foreground">{person.societyRole}</p>
-          ) : null}
-          {person.active ? null : (
-            <div className="mt-2">
-              <StatusBadge tone="muted">Inactive</StatusBadge>
-            </div>
-          )}
-        </div>
+        {person.active ? null : (
+          <StatusBadge tone="muted">Inactive</StatusBadge>
+        )}
       </div>
 
       <dl className="mt-6 space-y-2 text-sm">

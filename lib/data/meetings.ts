@@ -2,9 +2,10 @@ import "server-only";
 
 import { cache } from "react";
 import { failRead, one, type DataResult } from "@/lib/data/read";
+import { listAttachments } from "@/lib/files";
 import { isUuid } from "@/lib/format";
 import { getReadClient } from "@/lib/supabase/read";
-import type { MeetingDetail, MeetingFile, MeetingSummary, NamedRef } from "@/lib/types";
+import type { MeetingDetail, MeetingSummary, NamedRef } from "@/lib/types";
 
 type MeetingRow = {
   id: string;
@@ -122,24 +123,9 @@ export const getMeeting = cache(
   },
 );
 
-async function listMeetingFiles(
+function listMeetingFiles(
   client: NonNullable<ReturnType<typeof getReadClient>>,
   meetingId: string,
-): Promise<MeetingFile[]> {
-  const { data, error } = await client
-    .from("meeting_files")
-    .select("id, file_name")
-    .eq("meeting_id", meetingId)
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    return [];
-  }
-
-  return ((data ?? []) as Array<{ id: string; file_name: string }>).map(
-    (file) => ({
-      id: file.id,
-      fileName: file.file_name,
-    }),
-  );
+) {
+  return listAttachments(client, "meeting_files", "meeting_id", meetingId);
 }

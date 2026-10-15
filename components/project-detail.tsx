@@ -1,4 +1,5 @@
 import { EditLink } from "@/components/edit-link";
+import { FileLinks } from "@/components/file-links";
 import { PersonAvatar } from "@/components/person-avatar";
 import { PersonLink } from "@/components/record-link";
 import { Section } from "@/components/section";
@@ -37,6 +38,17 @@ export function ProjectDetailView({
       {project.description ? (
         <p className="mt-6 max-w-3xl text-sm leading-6">{project.description}</p>
       ) : null}
+
+      <Section title="Files">
+        {project.files.length > 0 ? (
+          <FileLinks
+            files={project.files}
+            href={(fileId) => `/projects/${project.id}/files/${fileId}`}
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground">No files attached.</p>
+        )}
+      </Section>
 
       <Section title="Team">
         <ul className="divide-y rounded-lg border">

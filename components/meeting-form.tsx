@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
+import { RecordFiles, useRecordFiles } from "@/components/record-files";
 import { Button } from "@/components/ui/button";
 import { saveMeeting } from "@/lib/actions/meetings";
 import {
@@ -22,26 +23,18 @@ export function MeetingForm({
   meetingLocal: string;
   projects: ProjectSummary[];
 }) {
-  const pendingFiles = useRef<File[]>([]);
-  const [pickedNames, setPickedNames] = useState<string[]>([]);
-  const [removedFileIds, setRemovedFileIds] = useState<string[]>([]);
+  const files = useRecordFiles();
   const { formRef, phase, error, schedule, saveNow } = useAutosave(
     async (previous: ActionState, formData: FormData) => {
-      const files = pendingFiles.current.splice(0, pendingFiles.current.length);
-
-      for (const file of files) {
-        formData.append("attachment", file);
-      }
-
+      const taken = files.take(formData);
       const result = await saveMeeting(previous, formData);
 
       if (result?.error) {
-        pendingFiles.current.unshift(...files);
+        files.restore(taken);
         return result;
       }
 
-      setPickedNames([]);
-      setRemovedFileIds([]);
+      files.clear();
       return result;
     },
     (id) => `/meetings/${id}/edit`,
@@ -49,10 +42,6 @@ export function MeetingForm({
   const [projectIds, setProjectIds] = useState(
     () => meeting?.projects.map((project) => project.id) ?? [],
   );
-  const visibleFiles = (meeting?.files ?? []).filter(
-    (file) => !removedFileIds.includes(file.id),
-  );
-
   return (
     <form
       ref={formRef}
@@ -110,71 +99,13 @@ export function MeetingForm({
         </Field>
       </section>
 
-      <section className="flex flex-col gap-4">
-        <div>
-          <h2 className="text-base font-semibold">Files</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Attach notes, slides, or other documents. Each file can be up to 4 MB.
-          </p>
-        </div>
-        {removedFileIds.map((fileId) => (
-          <input key={fileId} type="hidden" name="removeFileId" value={fileId} />
-        ))}
-        {visibleFiles.length > 0 ? (
-          <ul className="flex flex-col gap-2 text-sm">
-            {visibleFiles.map((file) => (
-              <li key={file.id} className="flex items-center justify-between gap-3">
-                <a
-                  href={meeting ? `/meetings/${meeting.id}/files/${file.id}` : "#"}
-                  className="underline-offset-4 hover:underline"
-                >
-                  {file.fileName}
-                </a>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setRemovedFileIds((current) => [...current, file.id]);
-                  }}
-                >
-                  Remove
-                </Button>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {pickedNames.length > 0 ? (
-          <ul className="text-sm text-muted-foreground">
-            {pickedNames.map((name) => (
-              <li key={name}>{name}</li>
-            ))}
-          </ul>
-        ) : null}
-        <label className="pressable inline-flex w-fit cursor-pointer text-sm underline underline-offset-4 hover:text-foreground">
-          Choose files
-          <input
-            type="file"
-            multiple
-            onChange={(event) => {
-              const chosen = [...(event.currentTarget.files ?? [])];
-
-              if (chosen.length === 0) {
-                return;
-              }
-
-              pendingFiles.current.push(...chosen);
-              setPickedNames((current) => [
-                ...current,
-                ...chosen.map((file) => file.name),
-              ]);
-              event.currentTarget.value = "";
-              schedule();
-            }}
-            className="sr-only"
-          />
-        </label>
-      </section>
+      <RecordFiles
+        files={meeting?.files ?? []}
+        recordId={meeting?.id}
+        downloadPath={(id, fileId) => `/meetings/${id}/files/${fileId}`}
+        pending={files}
+        onChange={schedule}
+      />
 
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={phase === "saving"}>

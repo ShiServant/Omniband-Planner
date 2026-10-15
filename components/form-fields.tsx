@@ -55,9 +55,7 @@ export function SaveStatus({
 
 export function personOptionLabel(person: {
   name: string;
-  societyRole: string | null;
   active: boolean;
 }) {
-  const role = person.societyRole ? ` — ${person.societyRole}` : "";
-  return person.active ? `${person.name}${role}` : `${person.name}${role} (inactive)`;
+  return person.active ? person.name : `${person.name} (inactive)`;
 }

@@ -6,6 +6,7 @@ import type { ActionState } from "@/lib/action-state";
 import { assertPeople } from "@/lib/admin/records";
 import { emptyToNull, field, fields, firstIssue } from "@/lib/forms";
 import { isUuid } from "@/lib/format";
+import { syncAttachments } from "@/lib/files";
 import { SaveError, messageFrom, throwDb, withAdminDb } from "@/lib/supabase/admin";
 import { projectSchema } from "@/lib/validators";
 
@@ -162,6 +163,14 @@ export async function saveProject(
           throwDb(inserted.error);
         }
       }
+
+      await syncAttachments(
+        db,
+        "project_files",
+        "project_id",
+        projectId,
+        formData,
+      );
 
       return projectId;
     });

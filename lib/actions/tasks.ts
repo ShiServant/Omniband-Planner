@@ -7,6 +7,7 @@ import { assertPeople, assertProjects } from "@/lib/admin/records";
 import { emptyToNull, field, firstIssue } from "@/lib/forms";
 import { safeReturnTo } from "@/lib/admin/token";
 import { isUuid } from "@/lib/format";
+import { syncAttachments } from "@/lib/files";
 import {
   EditAccessError,
   SaveError,
@@ -87,23 +88,26 @@ export async function saveTask(
       await assertProjects(db, [parsed.data.projectId]);
       await assertPeople(db, [parsed.data.responsiblePersonId], allowedInactive);
 
+      let taskId = id;
+
       if (id) {
         const error = await writeTask(db, payload, id);
 
         if (error) {
           throwTaskError(error, payload.important);
         }
+      } else {
+        const { data, error } = await insertTask(db, payload);
 
-        return id;
+        if (error) {
+          throwTaskError(error, payload.important);
+        }
+
+        taskId = String(data.id);
       }
 
-      const { data, error } = await insertTask(db, payload);
-
-      if (error) {
-        throwTaskError(error, payload.important);
-      }
-
-      return String(data.id);
+      await syncAttachments(db, "task_files", "task_id", taskId, formData);
+      return taskId;
     });
   } catch (error) {
     return { error: messageFrom(error) };

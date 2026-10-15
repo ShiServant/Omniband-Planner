@@ -32,13 +32,6 @@ export function PersonForm({ person }: { person?: PersonSummary }) {
           className={inputClass}
         />
       </Field>
-      <Field label="Society role">
-        <input
-          name="societyRole"
-          defaultValue={person?.societyRole ?? ""}
-          className={inputClass}
-        />
-      </Field>
       <Field label="Email">
         <input
           name="email"

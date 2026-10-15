@@ -11,7 +11,6 @@ const optionalDate = z
 
 export const personSchema = z.object({
   name: z.string().trim().min(1, "Name is required."),
-  societyRole: z.string().trim(),
   email: z
     .string()
     .trim()

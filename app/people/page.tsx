@@ -39,10 +39,11 @@ export default async function PeoplePage() {
                         <StatusBadge tone="muted">Inactive</StatusBadge>
                       )}
                     </span>
-                    <span className="mt-0.5 block text-sm text-muted-foreground">
-                      {person.societyRole || "No role recorded"}
-                      {person.email ? ` · ${person.email}` : ""}
-                    </span>
+                    {person.email ? (
+                      <span className="mt-0.5 block text-sm text-muted-foreground">
+                        {person.email}
+                      </span>
+                    ) : null}
                   </span>
                 </Link>
               </li>

@@ -2,6 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 import { failRead, one, type DataResult } from "@/lib/data/read";
+import { loadTaskFiles } from "@/lib/files";
 import { isUuid } from "@/lib/format";
 import { getReadClient } from "@/lib/supabase/read";
 import type {
@@ -65,6 +66,7 @@ export function mapTask(row: TaskRow): TaskSummary {
     project,
     responsible,
     sourceMeeting: one(row.source_meeting),
+    files: [],
   };
 }
 
@@ -126,7 +128,10 @@ export async function listTasks(
 
   return {
     configured: true,
-    data: rows.map(mapTask).sort(compareTasks),
+    data: await loadTaskFiles(
+      client,
+      rows.map(mapTask).sort(compareTasks),
+    ),
   };
 }
 
@@ -150,7 +155,10 @@ export const getTask = cache(
       return { configured: true, data: null };
     }
 
-    return { configured: true, data: mapTask(row) };
+    return {
+      configured: true,
+      data: (await loadTaskFiles(client, [mapTask(row)]))[0],
+    };
   },
 );
 

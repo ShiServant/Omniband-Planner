@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { saveProject } from "@/lib/actions/projects";
+import { RecordFiles, useRecordFiles } from "@/components/record-files";
 import { DeleteProjectButton } from "@/components/delete-project-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +14,7 @@ import {
 } from "@/components/form-fields";
 import { useAutosave } from "@/components/use-autosave";
 import { projectStatusLabel } from "@/lib/labels";
+import type { ActionState } from "@/lib/action-state";
 import type { PersonSummary, ProjectDetail, ProjectStatus } from "@/lib/types";
 
 const statuses: ProjectStatus[] = [
@@ -29,8 +31,20 @@ export function ProjectForm({
   project?: ProjectDetail;
   people: PersonSummary[];
 }) {
+  const files = useRecordFiles();
   const { formRef, phase, error, schedule, saveNow } = useAutosave(
-    saveProject,
+    async (previous: ActionState, formData: FormData) => {
+      const taken = files.take(formData);
+      const result = await saveProject(previous, formData);
+
+      if (result?.error) {
+        files.restore(taken);
+        return result;
+      }
+
+      files.clear();
+      return result;
+    },
     (id) => `/projects/${id}/edit`,
   );
   const [status, setStatus] = useState<ProjectStatus>(
@@ -183,6 +197,13 @@ export function ProjectForm({
           <p className="text-sm text-muted-foreground">No other active people.</p>
         )}
       </fieldset>
+      <RecordFiles
+        files={project?.files ?? []}
+        recordId={project?.id}
+        downloadPath={(id, fileId) => `/projects/${id}/files/${fileId}`}
+        pending={files}
+        onChange={schedule}
+      />
       {project ? null : (
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={phase === "saving"}>

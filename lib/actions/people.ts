@@ -19,7 +19,6 @@ export async function savePerson(
 
   const parsed = personSchema.safeParse({
     name: field(formData, "name"),
-    societyRole: field(formData, "societyRole"),
     email: field(formData, "email"),
     contactInfo: field(formData, "contactInfo"),
     avatarUrl: field(formData, "avatarUrl"),
@@ -32,7 +31,7 @@ export async function savePerson(
 
   const payload = {
     name: parsed.data.name,
-    society_role: emptyToNull(parsed.data.societyRole),
+    society_role: null,
     email: emptyToNull(parsed.data.email),
     contact_info: emptyToNull(parsed.data.contactInfo),
     avatar_url: emptyToNull(parsed.data.avatarUrl),

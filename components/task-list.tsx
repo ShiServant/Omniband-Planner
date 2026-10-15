@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cn } from "cn";
 import { markTaskDone } from "@/lib/actions/tasks";
 import { DeleteTaskButton } from "@/components/delete-task-button";
+import { FileLinks } from "@/components/file-links";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { MeetingLink, PersonLink, ProjectLink } from "@/components/record-link";
 import { PriorityBadge, TaskStatusBadge } from "@/components/status-badge";
@@ -55,6 +56,10 @@ export function TaskList({
                   <span aria-hidden> · </span>
                   {formatDate(task.dueDate) ?? "No date"}
                 </p>
+                <FileLinks
+                  files={task.files}
+                  href={(fileId) => `/tasks/${task.id}/files/${fileId}`}
+                />
               </div>
               <TaskStatusBadge status={task.status} />
             </div>
@@ -111,6 +116,10 @@ export function TaskList({
                     From <MeetingLink meeting={task.sourceMeeting} />
                   </p>
                 ) : null}
+                <FileLinks
+                  files={task.files}
+                  href={(fileId) => `/tasks/${task.id}/files/${fileId}`}
+                />
               </td>
               {showProject ? (
                 <td className="px-4 py-3">

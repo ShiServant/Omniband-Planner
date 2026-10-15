@@ -5,6 +5,7 @@ import { failRead, one, type DataResult } from "@/lib/data/read";
 import { isUuid } from "@/lib/format";
 import { getReadClient } from "@/lib/supabase/read";
 import { compareTasks, mapTask, readTaskRows } from "@/lib/data/tasks";
+import { loadTaskFiles } from "@/lib/files";
 import type {
   PersonDetail,
   PersonProject,
@@ -54,9 +55,37 @@ export async function listPeople(): Promise<DataResult<PersonSummary[]>> {
     failRead("people", error.message);
   }
 
+  const roster = [
+    "Lisa",
+    "Kevin",
+    "Chris",
+    "Yuro",
+    "Haobo",
+    "Jenevieve",
+    "Eric",
+    "Frank",
+  ];
+
   return {
     configured: true,
-    data: ((data ?? []) as PersonRow[]).map(mapPerson),
+    data: ((data ?? []) as PersonRow[]).map(mapPerson).sort((a, b) => {
+      const aIndex = roster.indexOf(a.name);
+      const bIndex = roster.indexOf(b.name);
+
+      if (aIndex === -1 && bIndex === -1) {
+        return a.name.localeCompare(b.name);
+      }
+
+      if (aIndex === -1) {
+        return 1;
+      }
+
+      if (bIndex === -1) {
+        return -1;
+      }
+
+      return aIndex - bIndex;
+    }),
   };
 }
 
@@ -163,7 +192,10 @@ export const getPerson = cache(
 
           return a.name.localeCompare(b.name, "en");
         }),
-        tasks: taskRows.map(mapTask).sort(compareTasks),
+        tasks: await loadTaskFiles(
+          client,
+          taskRows.map(mapTask).sort(compareTasks),
+        ),
       },
     };
   },
