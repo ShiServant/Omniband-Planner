@@ -21,7 +21,6 @@ export type ProjectSummary = {
   status: ProjectStatus;
   health: ProjectHealth | null;
   progress: number | null;
-  lead: NamedRef;
   nextStep: string | null;
   nextMilestone: string | null;
   dueDate: string | null;
@@ -30,6 +29,8 @@ export type ProjectSummary = {
   currentUpdate: string | null;
   createdAt: string;
   updatedAt: string;
+  includeEveryone: boolean;
+  members: Array<NamedRef & { active: boolean }>;
 };
 
 export type TaskFilters = {
@@ -48,12 +49,12 @@ export type TaskSummary = {
   important: boolean;
   dueDate: string | null;
   project: NamedRef;
-  responsible: NamedRef;
+  responsibles: NamedRef[];
   sourceMeeting: { id: string; title: string } | null;
   files: Attachment[];
 };
 
-export type ProjectDetail = ProjectSummary & {
+export type ProjectDetail = Omit<ProjectSummary, "members"> & {
   description: string | null;
   objective: string | null;
   members: Array<NamedRef & { role: string; active: boolean }>;

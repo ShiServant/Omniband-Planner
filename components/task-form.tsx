@@ -51,8 +51,11 @@ export function TaskForm({
     },
     (id) => `/tasks/${id}/edit`,
   );
+  const selectedResponsibles = new Set(
+    task?.responsibles.map((person) => person.id) ?? [],
+  );
   const responsibleOptions = people.filter(
-    (person) => person.active || person.id === task?.responsible.id,
+    (person) => person.active || selectedResponsibles.has(person.id),
   );
   const projectId = task?.project.id ?? defaultProjectId;
 
@@ -95,21 +98,20 @@ export function TaskForm({
           ))}
         </select>
       </Field>
-      <Field label="Responsible">
-        <select
-          name="responsiblePersonId"
-          required
-          defaultValue={task?.responsible.id ?? ""}
-          className={inputClass}
-        >
-          <option value="">Choose a person</option>
-          {responsibleOptions.map((person) => (
-            <option key={person.id} value={person.id}>
-              {personOptionLabel(person)}
-            </option>
-          ))}
-        </select>
-      </Field>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="text-sm font-medium">Responsible</legend>
+        {responsibleOptions.map((person) => (
+          <label key={person.id} className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="responsiblePersonId"
+              value={person.id}
+              defaultChecked={selectedResponsibles.has(person.id)}
+            />
+            {personOptionLabel(person)}
+          </label>
+        ))}
+      </fieldset>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Status">
           <select

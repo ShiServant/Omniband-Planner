@@ -20,7 +20,9 @@ const TASK_COLUMNS = `
   priority,
   due_date,
   project:projects!project_id (id, name),
-  responsible:people!responsible_person_id (id, name),
+  responsibles:task_responsibles (
+    person:people!person_id (id, name)
+  ),
   source_meeting:meetings!source_meeting_id (id, title)
 `;
 
@@ -40,7 +42,9 @@ export type TaskRow = {
   important?: boolean;
   due_date: string | null;
   project: NamedRef | NamedRef[] | null;
-  responsible: NamedRef | NamedRef[] | null;
+  responsibles: Array<{
+    person: NamedRef | NamedRef[] | null;
+  }> | null;
   source_meeting:
     | { id: string; title: string }
     | Array<{ id: string; title: string }>
@@ -49,11 +53,17 @@ export type TaskRow = {
 
 export function mapTask(row: TaskRow): TaskSummary {
   const project = one(row.project);
-  const responsible = one(row.responsible);
 
-  if (!project || !responsible) {
-    failRead("tasks", `Task ${row.id} is missing its project or responsible person.`);
+  if (!project) {
+    failRead("tasks", `Task ${row.id} is missing its project.`);
   }
+
+  const responsibles = (row.responsibles ?? [])
+    .flatMap((item) => {
+      const person = one(item.person);
+      return person ? [person] : [];
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, "en"));
 
   return {
     id: row.id,
@@ -64,7 +74,7 @@ export function mapTask(row: TaskRow): TaskSummary {
     important: row.important === true,
     dueDate: row.due_date,
     project,
-    responsible,
+    responsibles,
     sourceMeeting: one(row.source_meeting),
     files: [],
   };
@@ -94,6 +104,26 @@ export function compareTasks(a: TaskSummary, b: TaskSummary) {
   return a.title.localeCompare(b.title, "en");
 }
 
+export async function taskIdsForPerson(
+  client: NonNullable<ReturnType<typeof getReadClient>>,
+  personId: string,
+) {
+  const { data, error } = await client
+    .from("task_responsibles")
+    .select("task_id")
+    .eq("person_id", personId);
+
+  if (error) {
+    failRead("tasks", error.message ?? "The database did not respond.");
+  }
+
+  return [
+    ...new Set(
+      ((data ?? []) as Array<{ task_id: string }>).map((row) => row.task_id),
+    ),
+  ];
+}
+
 export async function listTasks(
   filters: TaskFilters = {},
 ): Promise<DataResult<TaskSummary[]>> {
@@ -103,10 +133,18 @@ export async function listTasks(
     return { configured: false };
   }
 
+  const responsibleIds = filters.personId
+    ? await taskIdsForPerson(client, filters.personId)
+    : null;
+
+  if (responsibleIds && responsibleIds.length === 0) {
+    return { configured: true, data: [] };
+  }
+
   const rows = await readTaskRows("tasks", (columns) => {
     const base = client.from("tasks").select(columns);
-    const byPerson = filters.personId
-      ? base.eq("responsible_person_id", filters.personId)
+    const byPerson = responsibleIds
+      ? base.in("id", responsibleIds)
       : base;
     const byProject = filters.projectId
       ? byPerson.eq("project_id", filters.projectId)

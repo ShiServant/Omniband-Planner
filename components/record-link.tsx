@@ -1,6 +1,19 @@
 import Link from "next/link";
 import { cn } from "cn";
 
+export function PersonLinks({
+  people,
+}: {
+  people: Array<{ id: string; name: string }>;
+}) {
+  return people.map((person, index) => (
+    <span key={person.id}>
+      {index > 0 ? ", " : null}
+      <PersonLink person={person} />
+    </span>
+  ));
+}
+
 export function PersonLink({
   person,
   className,

@@ -1,10 +1,11 @@
 "use server";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { ActionState } from "@/lib/action-state";
 import { assertPeople, assertProjects } from "@/lib/admin/records";
-import { emptyToNull, field, firstIssue } from "@/lib/forms";
+import { emptyToNull, field, fields, firstIssue } from "@/lib/forms";
 import { safeReturnTo } from "@/lib/admin/token";
 import { isUuid } from "@/lib/format";
 import { syncAttachments } from "@/lib/files";
@@ -31,7 +32,9 @@ export async function saveTask(
     title: field(formData, "title"),
     description: field(formData, "description"),
     projectId: field(formData, "projectId"),
-    responsiblePersonId: field(formData, "responsiblePersonId"),
+    responsiblePersonIds: [
+      ...new Set(fields(formData, "responsiblePersonId").filter(isUuid)),
+    ],
     status: field(formData, "status"),
     priority: field(formData, "priority"),
     dueDate: field(formData, "dueDate"),
@@ -46,7 +49,6 @@ export async function saveTask(
     title: parsed.data.title,
     description: emptyToNull(parsed.data.description),
     project_id: parsed.data.projectId,
-    responsible_person_id: parsed.data.responsiblePersonId,
     status: parsed.data.status,
     priority: parsed.data.priority,
     due_date: emptyToNull(parsed.data.dueDate),
@@ -58,35 +60,35 @@ export async function saveTask(
   try {
     savedId = await withAdminDb(async (db) => {
       const existing = id
-        ? await db
-            .from("tasks")
-            .select("responsible_person_id")
-            .eq("id", id)
-            .maybeSingle()
+        ? await db.from("tasks").select("id").eq("id", id).maybeSingle()
         : { data: null, error: null };
+      const existingPeople = id
+        ? await db
+            .from("task_responsibles")
+            .select("person_id")
+            .eq("task_id", id)
+        : { data: [], error: null };
 
       if (existing.error) {
         throwDb(existing.error);
+      }
+
+      if (existingPeople.error) {
+        throwDb(existingPeople.error);
       }
 
       if (id && !existing.data) {
         throw new SaveError("This record could not be found.");
       }
 
-      const currentResponsible = existing.data
-        ? String(
-            (existing.data as { responsible_person_id: string })
-              .responsible_person_id,
-          )
-        : "";
-      const allowedInactive = new Set<string>();
-
-      if (currentResponsible === parsed.data.responsiblePersonId) {
-        allowedInactive.add(currentResponsible);
-      }
+      const allowedInactive = new Set(
+        ((existingPeople.data ?? []) as Array<{ person_id: string }>).map(
+          (row) => row.person_id,
+        ),
+      );
 
       await assertProjects(db, [parsed.data.projectId]);
-      await assertPeople(db, [parsed.data.responsiblePersonId], allowedInactive);
+      await assertPeople(db, parsed.data.responsiblePersonIds, allowedInactive);
 
       let taskId = id;
 
@@ -106,6 +108,7 @@ export async function saveTask(
         taskId = String(data.id);
       }
 
+      await replaceResponsibles(db, taskId, parsed.data.responsiblePersonIds);
       await syncAttachments(db, "task_files", "task_id", taskId, formData);
       return taskId;
     });
@@ -115,6 +118,36 @@ export async function saveTask(
 
   revalidatePath("/", "layout");
   return { id: savedId };
+}
+
+async function replaceResponsibles(
+  db: SupabaseClient,
+  taskId: string,
+  personIds: string[],
+) {
+  const removed = await db
+    .from("task_responsibles")
+    .delete()
+    .eq("task_id", taskId);
+
+  if (removed.error) {
+    throwDb(removed.error);
+  }
+
+  if (personIds.length === 0) {
+    return;
+  }
+
+  const inserted = await db.from("task_responsibles").insert(
+    personIds.map((personId) => ({
+      task_id: taskId,
+      person_id: personId,
+    })),
+  );
+
+  if (inserted.error) {
+    throwDb(inserted.error);
+  }
 }
 
 function missingImportantColumn(error: { code?: string; message?: string }) {
@@ -137,7 +170,6 @@ async function writeTask(
     title: string;
     description: string | null;
     project_id: string;
-    responsible_person_id: string;
     status: string;
     priority: string;
     due_date: string | null;
@@ -164,7 +196,6 @@ async function insertTask(
     title: string;
     description: string | null;
     project_id: string;
-    responsible_person_id: string;
     status: string;
     priority: string;
     due_date: string | null;

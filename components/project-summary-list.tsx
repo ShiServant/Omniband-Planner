@@ -1,5 +1,5 @@
 import { DeleteProjectButton } from "@/components/delete-project-button";
-import { PersonLink, ProjectLink } from "@/components/record-link";
+import { PersonLinks, ProjectLink } from "@/components/record-link";
 import {
   ProjectStatusBadge,
 } from "@/components/status-badge";
@@ -32,7 +32,7 @@ export function ProjectSummaryList({
             <FullMeta project={project} />
           ) : (
             <p className="mt-1 text-sm text-muted-foreground">
-              Lead <PersonLink person={project.lead} />
+              <ProjectMembers project={project} />
               <span aria-hidden> · </span>
               Updated {formatDate(project.updatedAt)}
             </p>
@@ -43,10 +43,22 @@ export function ProjectSummaryList({
   );
 }
 
+function ProjectMembers({ project }: { project: ProjectSummary }) {
+  if (project.includeEveryone) {
+    return "Everyone";
+  }
+
+  if (project.members.length === 0) {
+    return "No members";
+  }
+
+  return <PersonLinks people={project.members} />;
+}
+
 function FullMeta({ project }: { project: ProjectSummary }) {
   const parts = [
     <>
-      Lead <PersonLink person={project.lead} />
+      <ProjectMembers project={project} />
     </>,
   ];
 

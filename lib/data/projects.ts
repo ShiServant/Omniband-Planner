@@ -30,10 +30,13 @@ const PROJECT_SELECT = `
   blocker,
   created_at,
   updated_at,
-  lead:people!lead_person_id (id, name, active)
+  include_everyone,
+  members:project_members (
+    person:people!person_id (id, name, active)
+  )
 `;
 
-type LeadRow = NamedRef & { active: boolean };
+type PersonRef = NamedRef & { active: boolean };
 
 type ProjectRow = {
   id: string;
@@ -51,25 +54,30 @@ type ProjectRow = {
   blocker: string | null;
   created_at: string;
   updated_at: string;
-  lead: LeadRow | LeadRow[] | null;
+  include_everyone: boolean;
+  members: Array<{
+    person: PersonRef | PersonRef[] | null;
+  }> | null;
 };
 
 export type ProjectView = "all" | "active" | "completed" | "archived";
 
+function mapMembers(row: ProjectRow) {
+  return (row.members ?? [])
+    .flatMap((member) => {
+      const person = one(member.person);
+      return person ? [person] : [];
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, "en"));
+}
+
 function mapProject(row: ProjectRow): ProjectSummary {
-  const lead = one(row.lead);
-
-  if (!lead) {
-    failRead("projects", `Project ${row.id} is missing its lead.`);
-  }
-
   return {
     id: row.id,
     name: row.name,
     status: row.status,
     health: row.health,
     progress: row.progress,
-    lead,
     nextStep: row.next_step,
     nextMilestone: row.next_milestone,
     dueDate: row.due_date,
@@ -78,6 +86,8 @@ function mapProject(row: ProjectRow): ProjectSummary {
     currentUpdate: row.current_update,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    includeEveryone: row.include_everyone,
+    members: mapMembers(row),
   };
 }
 
@@ -208,16 +218,11 @@ export const getProject = cache(
 
     const row = projectResult.data as ProjectRow;
     const summary = mapProject(row);
-    const lead = one(row.lead);
-
-    if (!lead) {
-      failRead("project", "Project is missing its lead.");
-    }
     const members = ((membersResult.data ?? []) as MemberRow[])
       .flatMap((member) => {
         const person = one(member.person);
 
-        if (!person || person.id === summary.lead.id) {
+        if (!person) {
           return [];
         }
 
@@ -260,10 +265,7 @@ export const getProject = cache(
         ...summary,
         description: row.description,
         objective: row.objective,
-        members: [
-          { id: lead.id, name: lead.name, role: "Lead", active: lead.active },
-          ...members,
-        ],
+        members,
         tasks,
         meetings,
         files,

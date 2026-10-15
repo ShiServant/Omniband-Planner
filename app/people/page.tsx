@@ -19,7 +19,7 @@ export default async function PeoplePage() {
     <>
       <PageHeader
         title="People"
-        description="Society members, the projects they lead, and the work they are responsible for."
+        description="Society members, the projects they are on, and the work they are responsible for."
         action={editing ? <EditLink href="/people/new">Add person</EditLink> : null}
       />
       {result.configured ? (

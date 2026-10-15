@@ -22,14 +22,10 @@ export async function saveProject(
 
   const status = field(formData, "status");
   const active = status === "planning" || status === "in_progress";
-  const leadPersonId = field(formData, "leadPersonId");
-  const memberIds = [
-    ...new Set(
-      fields(formData, "memberId").filter(
-        (memberId) => memberId !== leadPersonId && isUuid(memberId),
-      ),
-    ),
-  ];
+  const includeEveryone = formData.get("everyone") === "true";
+  const memberIds = includeEveryone
+    ? []
+    : [...new Set(fields(formData, "memberId").filter(isUuid))];
   const parsed = projectSchema.safeParse({
     name: field(formData, "name"),
     description: field(formData, "description"),
@@ -43,7 +39,7 @@ export async function saveProject(
     nextStep: "",
     nextMilestone: "",
     blocker: "",
-    leadPersonId,
+    includeEveryone,
     memberIds,
   });
 
@@ -64,7 +60,7 @@ export async function saveProject(
     next_step: emptyToNull(parsed.data.nextStep),
     next_milestone: emptyToNull(parsed.data.nextMilestone),
     blocker: emptyToNull(parsed.data.blocker),
-    lead_person_id: parsed.data.leadPersonId,
+    include_everyone: parsed.data.includeEveryone,
   };
 
   let savedId = id;
@@ -78,11 +74,7 @@ export async function saveProject(
             .eq("project_id", id)
         : { data: [], error: null };
       const existingProject = id
-        ? await db
-            .from("projects")
-            .select("lead_person_id")
-            .eq("id", id)
-            .maybeSingle()
+        ? await db.from("projects").select("id").eq("id", id).maybeSingle()
         : { data: null, error: null };
 
       if (existingMembers.error) {
@@ -98,24 +90,12 @@ export async function saveProject(
       }
 
       const allowedInactive = new Set<string>(
-        [
-          existingProject.data
-            ? String(
-                (existingProject.data as { lead_person_id: string })
-                  .lead_person_id,
-              )
-            : "",
-          ...((existingMembers.data ?? []) as Array<{ person_id: string }>).map(
-            (member) => member.person_id,
-          ),
-        ].filter(Boolean),
+        ((existingMembers.data ?? []) as Array<{ person_id: string }>).map(
+          (member) => member.person_id,
+        ),
       );
 
-      await assertPeople(
-        db,
-        [parsed.data.leadPersonId, ...parsed.data.memberIds],
-        allowedInactive,
-      );
+      await assertPeople(db, parsed.data.memberIds, allowedInactive);
 
       if (id) {
         const { error } = await db.from("projects").update(payload).eq("id", id);

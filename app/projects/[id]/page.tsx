@@ -34,7 +34,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
       <>
         <PageHeader
           title="Project"
-          description="What this project is, and who leads it."
+          description="What this project is, and who is on it."
           back={{ href: "/projects", label: "Projects" }}
         />
         <DatabaseUnavailable />

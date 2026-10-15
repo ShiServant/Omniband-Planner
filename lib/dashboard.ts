@@ -9,6 +9,20 @@ import type {
 
 const UPCOMING_DAYS = 14;
 
+function projectPeople(project: ProjectSummary) {
+  if (project.includeEveryone) {
+    return "Everyone";
+  }
+
+  const names = project.members.map((member) => member.name);
+  return names.length > 0 ? names.join(", ") : "No members";
+}
+
+function taskPeople(task: TaskSummary) {
+  const names = task.responsibles.map((person) => person.name);
+  return names.length > 0 ? names.join(", ") : "No one";
+}
+
 function isActive(project: ProjectSummary) {
   return project.status === "planning" || project.status === "in_progress";
 }
@@ -41,7 +55,7 @@ export function buildDashboard(
           id: `project-${project.id}`,
           projectId: project.id,
           title: project.name,
-          detail: `Lead ${project.lead.name}`,
+          detail: projectPeople(project),
           dueDate: project.dueDate,
           overdue: project.dueDate < today,
         },
@@ -58,7 +72,7 @@ export function buildDashboard(
           projectId: task.project.id,
           taskId: task.id,
           title: task.title,
-          detail: `${task.responsible.name} · ${task.project.name}`,
+          detail: `${taskPeople(task)} · ${task.project.name}`,
           dueDate: task.dueDate,
           overdue: task.dueDate < today,
         },
@@ -83,7 +97,7 @@ export function buildDashboard(
           date: project.dueDate,
           kind: "project" as const,
           title: project.name,
-          detail: `Lead ${project.lead.name}`,
+          detail: projectPeople(project),
         },
       ];
     }),
@@ -97,7 +111,7 @@ export function buildDashboard(
           date: task.dueDate,
           kind: "deadline" as const,
           title: task.title,
-          detail: `${task.responsible.name} · ${task.project.name}`,
+          detail: `${taskPeople(task)} · ${task.project.name}`,
         },
       ];
     }),

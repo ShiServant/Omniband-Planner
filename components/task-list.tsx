@@ -4,7 +4,7 @@ import { markTaskDone } from "@/lib/actions/tasks";
 import { DeleteTaskButton } from "@/components/delete-task-button";
 import { FileLinks } from "@/components/file-links";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { MeetingLink, PersonLink, ProjectLink } from "@/components/record-link";
+import { MeetingLink, PersonLinks, ProjectLink } from "@/components/record-link";
 import { PriorityBadge, TaskStatusBadge } from "@/components/status-badge";
 import { formatDate } from "@/lib/format";
 import type { TaskSummary } from "@/lib/types";
@@ -49,7 +49,7 @@ export function TaskList({
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {showResponsible ? (
-                    <PersonLink person={task.responsible} />
+                    <PersonLinks people={task.responsibles} />
                   ) : null}
                   {showResponsible && showProject ? <span aria-hidden> · </span> : null}
                   {showProject ? <ProjectLink project={task.project} /> : null}
@@ -128,7 +128,7 @@ export function TaskList({
               ) : null}
               {showResponsible ? (
                 <td className="px-4 py-3">
-                  <PersonLink person={task.responsible} />
+                  <PersonLinks people={task.responsibles} />
                 </td>
               ) : null}
               <td className="px-4 py-3 whitespace-nowrap">

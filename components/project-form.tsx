@@ -50,20 +50,15 @@ export function ProjectForm({
   const [status, setStatus] = useState<ProjectStatus>(
     project?.status ?? "planning",
   );
-  const [leadId, setLeadId] = useState(project?.lead.id ?? "");
+  const [everyone, setEveryone] = useState(project?.includeEveryone ?? false);
   const [members, setMembers] = useState(
     () =>
-      project?.members
-        .filter((member) => member.id !== project.lead.id)
-        .map((member) => ({ id: member.id, role: member.role })) ?? [],
-  );
-  const leadOptions = people.filter(
-    (person) => person.active || person.id === project?.lead.id,
+      project?.members.map((member) => ({ id: member.id, role: member.role })) ??
+      [],
   );
   const memberOptions = people.filter(
     (person) =>
-      person.id !== leadId &&
-      (person.active || members.some((member) => member.id === person.id)),
+      person.active || members.some((member) => member.id === person.id),
   );
 
   return (
@@ -100,28 +95,6 @@ export function ProjectForm({
           ))}
         </select>
       </Field>
-      <Field label="Lead">
-        <select
-          name="leadPersonId"
-          required
-          value={leadId}
-          onChange={(event) => {
-            const next = event.target.value;
-            setLeadId(next);
-            setMembers((current) =>
-              current.filter((member) => member.id !== next),
-            );
-          }}
-          className={inputClass}
-        >
-          <option value="">Choose a lead</option>
-          {leadOptions.map((person) => (
-            <option key={person.id} value={person.id}>
-              {personOptionLabel(person)}
-            </option>
-          ))}
-        </select>
-      </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Start date">
           <input
@@ -149,10 +122,19 @@ export function ProjectForm({
       </Field>
       <fieldset className="flex flex-col gap-3">
         <legend className="text-sm font-medium">Members</legend>
-        <p className="text-xs text-muted-foreground">
-          The lead is chosen above and is not listed again here.
-        </p>
-        {memberOptions.length > 0 ? (
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="everyone"
+            value="true"
+            checked={everyone}
+            onChange={(event) => {
+              setEveryone(event.target.checked);
+            }}
+          />
+          Everyone
+        </label>
+        {everyone ? null : memberOptions.length > 0 ? (
           memberOptions.map((person) => {
             const selected = members.find((member) => member.id === person.id);
 
@@ -194,7 +176,7 @@ export function ProjectForm({
             );
           })
         ) : (
-          <p className="text-sm text-muted-foreground">No other active people.</p>
+          <p className="text-sm text-muted-foreground">No active people.</p>
         )}
       </fieldset>
       <RecordFiles

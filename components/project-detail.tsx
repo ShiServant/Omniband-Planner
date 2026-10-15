@@ -1,7 +1,7 @@
 import { EditLink } from "@/components/edit-link";
 import { FileLinks } from "@/components/file-links";
 import { PersonAvatar } from "@/components/person-avatar";
-import { PersonLink } from "@/components/record-link";
+import { PersonLink, PersonLinks } from "@/components/record-link";
 import { Section } from "@/components/section";
 import { ProjectStatusBadge } from "@/components/status-badge";
 import { TaskList } from "@/components/task-list";
@@ -25,7 +25,13 @@ export function ProjectDetailView({
         <ProjectStatusBadge status={project.status} />
       </div>
       <p className="mt-3 text-sm text-muted-foreground">
-        Lead <PersonLink person={project.lead} />
+        {project.includeEveryone ? (
+          "Everyone"
+        ) : project.members.length > 0 ? (
+          <PersonLinks people={project.members} />
+        ) : (
+          "No members"
+        )}
         <span aria-hidden> · </span>
         Target {formatDate(project.dueDate) ?? "not set"}
         {project.startDate ? (
@@ -51,23 +57,29 @@ export function ProjectDetailView({
       </Section>
 
       <Section title="Team">
-        <ul className="divide-y rounded-lg border">
-          {project.members.map((member) => (
-            <li
-              key={`${member.id}-${member.role}`}
-              className="flex items-center gap-3 px-4 py-3 text-sm"
-            >
-              <PersonAvatar name={member.name} url={null} />
-              <span>
-                <PersonLink person={member} />
-                <span className="text-muted-foreground"> · {member.role}</span>
-                {member.active ? null : (
-                  <span className="text-muted-foreground"> · Inactive</span>
-                )}
-              </span>
-            </li>
-          ))}
-        </ul>
+        {project.includeEveryone ? (
+          <p className="text-sm">Everyone</p>
+        ) : project.members.length > 0 ? (
+          <ul className="divide-y rounded-lg border">
+            {project.members.map((member) => (
+              <li
+                key={`${member.id}-${member.role}`}
+                className="flex items-center gap-3 px-4 py-3 text-sm"
+              >
+                <PersonAvatar name={member.name} url={null} />
+                <span>
+                  <PersonLink person={member} />
+                  <span className="text-muted-foreground"> · {member.role}</span>
+                  {member.active ? null : (
+                    <span className="text-muted-foreground"> · Inactive</span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">No members yet.</p>
+        )}
       </Section>
 
       <Section

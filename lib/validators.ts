@@ -48,7 +48,7 @@ export const projectSchema = z
     nextStep: z.string().trim(),
     nextMilestone: z.string().trim(),
     blocker: z.string().trim(),
-    leadPersonId: uuid,
+    includeEveryone: z.boolean(),
     memberIds: z.array(uuid),
   })
   .superRefine((value, ctx) => {
@@ -96,7 +96,9 @@ export const taskSchema = z.object({
   title: z.string().trim().min(1, "Title is required."),
   description: z.string().trim(),
   projectId: uuid,
-  responsiblePersonId: uuid,
+  responsiblePersonIds: z
+    .array(uuid)
+    .min(1, "Choose at least one person."),
   status: z.enum(["in_progress", "done"]),
   priority: z.enum(["low", "medium", "high", "urgent"]),
   dueDate: optionalDate,

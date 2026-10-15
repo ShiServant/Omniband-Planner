@@ -4,7 +4,12 @@ import { cache } from "react";
 import { failRead, one, type DataResult } from "@/lib/data/read";
 import { isUuid } from "@/lib/format";
 import { getReadClient } from "@/lib/supabase/read";
-import { compareTasks, mapTask, readTaskRows } from "@/lib/data/tasks";
+import {
+  compareTasks,
+  mapTask,
+  readTaskRows,
+  taskIdsForPerson,
+} from "@/lib/data/tasks";
 import { loadTaskFiles } from "@/lib/files";
 import type {
   PersonDetail,
@@ -129,43 +134,36 @@ export const getPerson = cache(
       return { configured: true, data: null };
     }
 
-    const [ledResult, memberResult, taskRows] = await Promise.all([
+    const responsibleTaskIds = await taskIdsForPerson(client, id);
+    const [everyoneResult, memberResult, taskRows] = await Promise.all([
       client
         .from("projects")
         .select("id, name, status, health")
-        .eq("lead_person_id", id),
+        .eq("include_everyone", true),
       client
         .from("project_members")
         .select("role, project:projects!project_id (id, name, status, health)")
         .eq("person_id", id),
-      readTaskRows("person tasks", (columns) =>
-        client.from("tasks").select(columns).eq("responsible_person_id", id),
-      ),
+      responsibleTaskIds.length === 0
+        ? Promise.resolve([])
+        : readTaskRows("person tasks", (columns) =>
+            client.from("tasks").select(columns).in("id", responsibleTaskIds),
+          ),
     ]);
 
-    if (ledResult.error) {
-      failRead("person projects", ledResult.error.message);
+    if (everyoneResult.error) {
+      failRead("person projects", everyoneResult.error.message);
     }
 
     if (memberResult.error) {
       failRead("person memberships", memberResult.error.message);
     }
 
-    const led = ((ledResult.data ?? []) as LedRow[]).map(
-      (project): PersonProject => ({
-        id: project.id,
-        name: project.name,
-        status: project.status,
-        health: project.health,
-        role: "Lead",
-      }),
-    );
-    const ledIds = new Set(led.map((project) => project.id));
     const memberships = ((memberResult.data ?? []) as MemberRow[]).flatMap(
       (member) => {
         const project = one(member.project);
 
-        if (!project || ledIds.has(project.id)) {
+        if (!project) {
           return [];
         }
 
@@ -180,18 +178,26 @@ export const getPerson = cache(
         ];
       },
     );
+    const memberIds = new Set(memberships.map((project) => project.id));
+    const everyone = ((everyoneResult.data ?? []) as LedRow[])
+      .filter((project) => !memberIds.has(project.id))
+      .map(
+        (project): PersonProject => ({
+          id: project.id,
+          name: project.name,
+          status: project.status,
+          health: project.health,
+          role: "Everyone",
+        }),
+      );
 
     return {
       configured: true,
       data: {
         ...mapPerson(personResult.data as PersonRow),
-        projects: [...led, ...memberships].sort((a, b) => {
-          if ((a.role === "Lead") !== (b.role === "Lead")) {
-            return a.role === "Lead" ? -1 : 1;
-          }
-
-          return a.name.localeCompare(b.name, "en");
-        }),
+        projects: [...memberships, ...everyone].sort((a, b) =>
+          a.name.localeCompare(b.name, "en"),
+        ),
         tasks: await loadTaskFiles(
           client,
           taskRows.map(mapTask).sort(compareTasks),
