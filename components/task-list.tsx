@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cn } from "cn";
 import { markTaskDone } from "@/lib/actions/tasks";
 import { DeleteTaskButton } from "@/components/delete-task-button";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -13,13 +14,59 @@ export function TaskList({
   showResponsible = true,
   showSource = true,
   canEdit = false,
+  canDelete = true,
+  highlightImportant = false,
 }: {
   tasks: TaskSummary[];
   showProject?: boolean;
   showResponsible?: boolean;
   showSource?: boolean;
   canEdit?: boolean;
+  canDelete?: boolean;
+  highlightImportant?: boolean;
 }) {
+  if (highlightImportant) {
+    return (
+      <ul className="flex flex-col gap-3">
+        {tasks.map((task) => (
+          <li
+            key={task.id}
+            className={cn(
+              "rounded-lg border px-4 py-3",
+              task.important && "border-2 border-red-600",
+            )}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="font-medium">
+                  {task.title}
+                  {task.important ? (
+                    <span className="ml-2 text-xs font-medium text-red-700">
+                      Important
+                    </span>
+                  ) : null}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {showResponsible ? (
+                    <PersonLink person={task.responsible} />
+                  ) : null}
+                  {showResponsible && showProject ? <span aria-hidden> · </span> : null}
+                  {showProject ? <ProjectLink project={task.project} /> : null}
+                  <span aria-hidden> · </span>
+                  {formatDate(task.dueDate) ?? "No date"}
+                </p>
+              </div>
+              <TaskStatusBadge status={task.status} />
+            </div>
+            {canEdit ? (
+              <TaskActions task={task} canDelete={canDelete} className="mt-3" />
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
   return (
     <div className="overflow-x-auto rounded-lg border">
       <table className="w-full min-w-[720px] text-sm">
@@ -46,7 +93,14 @@ export function TaskList({
           {tasks.map((task) => (
             <tr key={task.id} className="align-top">
               <td className="px-4 py-3">
-                <p className="font-medium">{task.title}</p>
+                <p className="font-medium">
+                  {task.title}
+                  {task.important ? (
+                    <span className="ml-2 text-xs font-medium text-red-700">
+                      Important
+                    </span>
+                  ) : null}
+                </p>
                 {task.description ? (
                   <p className="mt-1 max-w-md text-muted-foreground">
                     {task.description}
@@ -79,29 +133,43 @@ export function TaskList({
               </td>
               {canEdit ? (
                 <td className="px-4 py-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Link
-                      href={`/tasks/${task.id}/edit`}
-                      className={buttonVariants({ variant: "outline", size: "sm" })}
-                    >
-                      Edit
-                    </Link>
-                    {task.status !== "done" ? (
-                      <form action={markTaskDone}>
-                        <input type="hidden" name="id" value={task.id} />
-                        <Button type="submit" variant="outline" size="sm">
-                          Mark done
-                        </Button>
-                      </form>
-                    ) : null}
-                    <DeleteTaskButton id={task.id} title={task.title} />
-                  </div>
+                  <TaskActions task={task} canDelete={canDelete} />
                 </td>
               ) : null}
             </tr>
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function TaskActions({
+  task,
+  canDelete,
+  className,
+}: {
+  task: TaskSummary;
+  canDelete: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex flex-wrap items-center gap-2", className)}>
+      <Link
+        href={`/tasks/${task.id}/edit`}
+        className={buttonVariants({ variant: "outline", size: "sm" })}
+      >
+        Edit
+      </Link>
+      {task.status !== "done" ? (
+        <form action={markTaskDone}>
+          <input type="hidden" name="id" value={task.id} />
+          <Button type="submit" variant="outline" size="sm">
+            Mark done
+          </Button>
+        </form>
+      ) : null}
+      {canDelete ? <DeleteTaskButton id={task.id} title={task.title} /> : null}
     </div>
   );
 }

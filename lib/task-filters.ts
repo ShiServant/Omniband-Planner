@@ -1,14 +1,7 @@
 import { isUuid } from "@/lib/format";
 import type { TaskFilters, TaskPriority, TaskStatus } from "@/lib/types";
 
-const statuses = new Set<TaskStatus | "all" | "outstanding">([
-  "outstanding",
-  "all",
-  "to_do",
-  "in_progress",
-  "blocked",
-  "done",
-]);
+const statuses = new Set<TaskStatus | "all">(["all", "in_progress", "done"]);
 
 const priorities = new Set<TaskPriority>(["low", "medium", "high", "urgent"]);
 
@@ -18,9 +11,9 @@ export function parseTaskFilters(params: {
   status?: string;
   priority?: string;
 }): TaskFilters {
-  const status = statuses.has(params.status as TaskStatus | "all" | "outstanding")
+  const status = statuses.has(params.status as TaskStatus | "all")
     ? (params.status as TaskFilters["status"])
-    : "outstanding";
+    : "in_progress";
 
   return {
     personId:

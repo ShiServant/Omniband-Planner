@@ -31,12 +31,8 @@ export function healthLabel(health: ProjectHealth) {
 
 export function taskStatusLabel(status: TaskStatus) {
   switch (status) {
-    case "to_do":
-      return "To do";
     case "in_progress":
       return "In progress";
-    case "blocked":
-      return "Blocked";
     case "done":
       return "Done";
   }

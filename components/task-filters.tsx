@@ -8,11 +8,8 @@ import type {
   TaskStatus,
 } from "@/lib/types";
 
-const statuses: Array<{ value: "" | TaskStatus | "all"; label: string }> = [
-  { value: "", label: "Outstanding" },
-  { value: "to_do", label: taskStatusLabel("to_do") },
+const statuses: Array<{ value: TaskStatus | "all"; label: string }> = [
   { value: "in_progress", label: taskStatusLabel("in_progress") },
-  { value: "blocked", label: taskStatusLabel("blocked") },
   { value: "done", label: taskStatusLabel("done") },
   { value: "all", label: "All" },
 ];
@@ -31,13 +28,12 @@ export function TaskFilters({
   people: PersonSummary[];
   projects: ProjectSummary[];
 }) {
-  const statusValue =
-    !filters.status || filters.status === "outstanding" ? "" : filters.status;
+  const statusValue = filters.status ?? "in_progress";
   const filtered = Boolean(
     filters.personId ||
       filters.projectId ||
       filters.priority ||
-      (filters.status && filters.status !== "outstanding"),
+      (filters.status && filters.status !== "in_progress"),
   );
 
   return (

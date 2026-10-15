@@ -56,8 +56,7 @@ export function HealthBadge({ health }: { health: ProjectHealth }) {
 }
 
 export function TaskStatusBadge({ status }: { status: TaskStatus }) {
-  const tone =
-    status === "done" ? "muted" : status === "blocked" ? "bad" : "neutral";
+  const tone = status === "done" ? "muted" : "neutral";
 
   return <StatusBadge tone={tone}>{taskStatusLabel(status)}</StatusBadge>;
 }

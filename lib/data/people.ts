@@ -4,7 +4,7 @@ import { cache } from "react";
 import { failRead, one, type DataResult } from "@/lib/data/read";
 import { isUuid } from "@/lib/format";
 import { getReadClient } from "@/lib/supabase/read";
-import { compareTasks, mapTask, TASK_SELECT, type TaskRow } from "@/lib/data/tasks";
+import { compareTasks, mapTask, readTaskRows } from "@/lib/data/tasks";
 import type {
   PersonDetail,
   PersonProject,
@@ -100,7 +100,7 @@ export const getPerson = cache(
       return { configured: true, data: null };
     }
 
-    const [ledResult, memberResult, taskResult] = await Promise.all([
+    const [ledResult, memberResult, taskRows] = await Promise.all([
       client
         .from("projects")
         .select("id, name, status, health")
@@ -109,7 +109,9 @@ export const getPerson = cache(
         .from("project_members")
         .select("role, project:projects!project_id (id, name, status, health)")
         .eq("person_id", id),
-      client.from("tasks").select(TASK_SELECT).eq("responsible_person_id", id),
+      readTaskRows("person tasks", (columns) =>
+        client.from("tasks").select(columns).eq("responsible_person_id", id),
+      ),
     ]);
 
     if (ledResult.error) {
@@ -118,10 +120,6 @@ export const getPerson = cache(
 
     if (memberResult.error) {
       failRead("person memberships", memberResult.error.message);
-    }
-
-    if (taskResult.error) {
-      failRead("person tasks", taskResult.error.message);
     }
 
     const led = ((ledResult.data ?? []) as LedRow[]).map(
@@ -165,9 +163,7 @@ export const getPerson = cache(
 
           return a.name.localeCompare(b.name, "en");
         }),
-        tasks: ((taskResult.data ?? []) as TaskRow[])
-          .map(mapTask)
-          .sort(compareTasks),
+        tasks: taskRows.map(mapTask).sort(compareTasks),
       },
     };
   },

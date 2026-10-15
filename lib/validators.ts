@@ -98,59 +98,18 @@ export const taskSchema = z.object({
   description: z.string().trim(),
   projectId: uuid,
   responsiblePersonId: uuid,
-  status: z.enum(["to_do", "in_progress", "blocked", "done"]),
+  status: z.enum(["in_progress", "done"]),
   priority: z.enum(["low", "medium", "high", "urgent"]),
   dueDate: optionalDate,
+  important: z.boolean(),
 });
 
-const decisionSchema = z.object({
-  id: z.union([z.literal(""), uuid]),
-  content: z.string().trim().min(1, "Each decision needs text."),
-  projectId: z.union([z.literal(""), uuid]),
+export const meetingSchema = z.object({
+  title: z.string().trim().min(1, "Title is required."),
+  meetingLocal: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "Enter a date and time."),
+  summary: z.string().trim(),
+  projectIds: z.array(uuid),
 });
-
-const actionSchema = z.object({
-  id: z.union([z.literal(""), uuid]),
-  title: z.string().trim().min(1, "Each action item needs a title."),
-  description: z.string().trim(),
-  responsiblePersonId: uuid,
-  projectId: uuid,
-  dueDate: optionalDate,
-  status: z.enum(["to_do", "in_progress", "blocked", "done"]),
-  priority: z.enum(["low", "medium", "high", "urgent"]),
-});
-
-export const meetingSchema = z
-  .object({
-    title: z.string().trim().min(1, "Title is required."),
-    meetingLocal: z
-      .string()
-      .trim()
-      .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "Enter a date and time."),
-    summary: z.string().trim(),
-    projectIds: z.array(uuid),
-    decisions: z.array(decisionSchema),
-    actions: z.array(actionSchema),
-  })
-  .superRefine((value, ctx) => {
-    const decisionIds = value.decisions
-      .map((decision) => decision.id)
-      .filter(Boolean);
-    const actionIds = value.actions.map((action) => action.id).filter(Boolean);
-
-    if (new Set(decisionIds).size !== decisionIds.length) {
-      ctx.addIssue({
-        code: "custom",
-        message: "A decision is listed more than once.",
-        path: ["decisions"],
-      });
-    }
-
-    if (new Set(actionIds).size !== actionIds.length) {
-      ctx.addIssue({
-        code: "custom",
-        message: "An action item is listed more than once.",
-        path: ["actions"],
-      });
-    }
-  });

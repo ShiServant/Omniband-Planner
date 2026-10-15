@@ -34,6 +34,7 @@ export async function saveTask(
     status: field(formData, "status"),
     priority: field(formData, "priority"),
     dueDate: field(formData, "dueDate"),
+    important: field(formData, "important") === "true",
   });
 
   if (!parsed.success) {
@@ -48,6 +49,7 @@ export async function saveTask(
     status: parsed.data.status,
     priority: parsed.data.priority,
     due_date: emptyToNull(parsed.data.dueDate),
+    important: parsed.data.important,
   };
 
   let savedId = id;
@@ -86,23 +88,19 @@ export async function saveTask(
       await assertPeople(db, [parsed.data.responsiblePersonId], allowedInactive);
 
       if (id) {
-        const { error } = await db.from("tasks").update(payload).eq("id", id);
+        const error = await writeTask(db, payload, id);
 
         if (error) {
-          throwDb(error);
+          throwTaskError(error, payload.important);
         }
 
         return id;
       }
 
-      const { data, error } = await db
-        .from("tasks")
-        .insert(payload)
-        .select("id")
-        .single();
+      const { data, error } = await insertTask(db, payload);
 
       if (error) {
-        throwDb(error);
+        throwTaskError(error, payload.important);
       }
 
       return String(data.id);
@@ -113,6 +111,86 @@ export async function saveTask(
 
   revalidatePath("/", "layout");
   return { id: savedId };
+}
+
+function missingImportantColumn(error: { code?: string; message?: string }) {
+  const text = `${error.code ?? ""} ${error.message ?? ""}`;
+  return (
+    error.code === "42703" ||
+    error.code === "PGRST204" ||
+    /important/i.test(text)
+  );
+}
+
+function withoutImportant(payload: { important: boolean }) {
+  const { important: _important, ...rest } = payload;
+  return rest;
+}
+
+async function writeTask(
+  db: Parameters<Parameters<typeof withAdminDb>[0]>[0],
+  payload: {
+    title: string;
+    description: string | null;
+    project_id: string;
+    responsible_person_id: string;
+    status: string;
+    priority: string;
+    due_date: string | null;
+    important: boolean;
+  },
+  id: string,
+) {
+  const updated = await db.from("tasks").update(payload).eq("id", id);
+
+  if (updated.error && missingImportantColumn(updated.error) && !payload.important) {
+    const retried = await db
+      .from("tasks")
+      .update(withoutImportant(payload))
+      .eq("id", id);
+    return retried.error;
+  }
+
+  return updated.error;
+}
+
+async function insertTask(
+  db: Parameters<Parameters<typeof withAdminDb>[0]>[0],
+  payload: {
+    title: string;
+    description: string | null;
+    project_id: string;
+    responsible_person_id: string;
+    status: string;
+    priority: string;
+    due_date: string | null;
+    important: boolean;
+  },
+) {
+  const inserted = await db.from("tasks").insert(payload).select("id").single();
+
+  if (
+    inserted.error &&
+    missingImportantColumn(inserted.error) &&
+    !payload.important
+  ) {
+    return db.from("tasks").insert(withoutImportant(payload)).select("id").single();
+  }
+
+  return inserted;
+}
+
+function throwTaskError(
+  error: { code?: string; message?: string },
+  important: boolean,
+): never {
+  if (important && missingImportantColumn(error)) {
+    throw new SaveError(
+      "Important tasks need a database update. Run the latest migration in Supabase.",
+    );
+  }
+
+  throwDb(error);
 }
 
 export async function markTaskDone(formData: FormData) {

@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     default: siteName,
     template: `%s · ${siteName}`,
   },
-  description: "Current projects, responsibilities, meetings, and decisions.",
+  description: "Current projects, responsibilities, meetings, and tasks.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

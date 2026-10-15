@@ -8,11 +8,10 @@ import type {
   NamedRef,
   TaskFilters,
   TaskPriority,
-  TaskStatus,
   TaskSummary,
 } from "@/lib/types";
 
-export const TASK_SELECT = `
+const TASK_COLUMNS = `
   id,
   title,
   description,
@@ -24,12 +23,20 @@ export const TASK_SELECT = `
   source_meeting:meetings!source_meeting_id (id, title)
 `;
 
+export const TASK_SELECT = `
+  ${TASK_COLUMNS},
+  important
+`;
+
+const TASK_SELECT_LEGACY = TASK_COLUMNS;
+
 export type TaskRow = {
   id: string;
   title: string;
   description: string | null;
-  status: TaskStatus;
+  status: string;
   priority: TaskPriority;
+  important?: boolean;
   due_date: string | null;
   project: NamedRef | NamedRef[] | null;
   responsible: NamedRef | NamedRef[] | null;
@@ -51,8 +58,9 @@ export function mapTask(row: TaskRow): TaskSummary {
     id: row.id,
     title: row.title,
     description: row.description,
-    status: row.status,
+    status: row.status === "done" ? "done" : "in_progress",
     priority: row.priority,
+    important: row.important === true,
     dueDate: row.due_date,
     project,
     responsible,
@@ -61,6 +69,10 @@ export function mapTask(row: TaskRow): TaskSummary {
 }
 
 export function compareTasks(a: TaskSummary, b: TaskSummary) {
+  if (a.important !== b.important) {
+    return a.important ? -1 : 1;
+  }
+
   if ((a.status === "done") !== (b.status === "done")) {
     return a.status === "done" ? 1 : -1;
   }
@@ -89,31 +101,32 @@ export async function listTasks(
     return { configured: false };
   }
 
-  const base = client.from("tasks").select(TASK_SELECT);
-  const byPerson = filters.personId
-    ? base.eq("responsible_person_id", filters.personId)
-    : base;
-  const byProject = filters.projectId
-    ? byPerson.eq("project_id", filters.projectId)
-    : byPerson;
-  const byPriority = filters.priority
-    ? byProject.eq("priority", filters.priority)
-    : byProject;
-  const byStatus =
-    filters.status === "outstanding"
-      ? byPriority.neq("status", "done")
-      : filters.status && filters.status !== "all"
-        ? byPriority.eq("status", filters.status)
-        : byPriority;
-  const { data, error } = await byStatus;
+  const rows = await readTaskRows("tasks", (columns) => {
+    const base = client.from("tasks").select(columns);
+    const byPerson = filters.personId
+      ? base.eq("responsible_person_id", filters.personId)
+      : base;
+    const byProject = filters.projectId
+      ? byPerson.eq("project_id", filters.projectId)
+      : byPerson;
+    const byPriority = filters.priority
+      ? byProject.eq("priority", filters.priority)
+      : byProject;
 
-  if (error) {
-    failRead("tasks", error.message);
-  }
+    if (!filters.status || filters.status === "in_progress") {
+      return byPriority.in("status", ["to_do", "in_progress", "blocked"]);
+    }
+
+    if (filters.status === "done") {
+      return byPriority.eq("status", "done");
+    }
+
+    return byPriority;
+  });
 
   return {
     configured: true,
-    data: ((data ?? []) as TaskRow[]).map(mapTask).sort(compareTasks),
+    data: rows.map(mapTask).sort(compareTasks),
   };
 }
 
@@ -129,20 +142,79 @@ export const getTask = cache(
       return { configured: false };
     }
 
-    const { data, error } = await client
-      .from("tasks")
-      .select(TASK_SELECT)
-      .eq("id", id)
-      .maybeSingle();
+    const row = await readTaskRow("task", (columns) =>
+      client.from("tasks").select(columns).eq("id", id).maybeSingle(),
+    );
 
-    if (error) {
-      failRead("task", error.message);
-    }
-
-    if (!data) {
+    if (!row) {
       return { configured: true, data: null };
     }
 
-    return { configured: true, data: mapTask(data as TaskRow) };
+    return { configured: true, data: mapTask(row) };
   },
 );
+
+type TaskQueryError = { code?: string; message?: string } | null;
+
+function missingImportantColumn(error: TaskQueryError) {
+  if (!error) {
+    return false;
+  }
+
+  const text = `${error.code ?? ""} ${error.message ?? ""}`;
+  return (
+    error.code === "42703" ||
+    error.code === "PGRST204" ||
+    /important/i.test(text)
+  );
+}
+
+export async function readTaskRows(
+  label: string,
+  run: (
+    columns: string,
+  ) => PromiseLike<{ data: unknown; error: TaskQueryError }>,
+) {
+  const primary = await run(TASK_SELECT);
+
+  if (primary.error && missingImportantColumn(primary.error)) {
+    const fallback = await run(TASK_SELECT_LEGACY);
+
+    if (fallback.error) {
+      failRead(label, fallback.error.message ?? "The database did not respond.");
+    }
+
+    return (fallback.data ?? []) as TaskRow[];
+  }
+
+  if (primary.error) {
+    failRead(label, primary.error.message ?? "The database did not respond.");
+  }
+
+  return (primary.data ?? []) as TaskRow[];
+}
+
+async function readTaskRow(
+  label: string,
+  run: (
+    columns: string,
+  ) => PromiseLike<{ data: unknown; error: TaskQueryError }>,
+) {
+  const primary = await run(TASK_SELECT);
+
+  if (primary.error && missingImportantColumn(primary.error)) {
+    const fallback = await run(TASK_SELECT_LEGACY);
+
+    if (fallback.error) {
+      failRead(label, fallback.error.message ?? "The database did not respond.");
+    }
+
+    return (fallback.data ?? null) as TaskRow | null;
+  }
+
+  if (primary.error) {
+    failRead(label, primary.error.message ?? "The database did not respond.");
+  }
+
+  return (primary.data ?? null) as TaskRow | null;
+}

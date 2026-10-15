@@ -1,16 +1,9 @@
 import { ProjectLink } from "@/components/record-link";
 import { Section } from "@/components/section";
-import { TaskList } from "@/components/task-list";
 import { formatDateTime } from "@/lib/format";
 import type { MeetingDetail } from "@/lib/types";
 
-export function MeetingDetailView({
-  meeting,
-  canEdit = false,
-}: {
-  meeting: MeetingDetail;
-  canEdit?: boolean;
-}) {
+export function MeetingDetailView({ meeting }: { meeting: MeetingDetail }) {
   return (
     <>
       <p className="text-sm text-muted-foreground">
@@ -58,35 +51,6 @@ export function MeetingDetailView({
           </ul>
         ) : (
           <p className="text-sm text-muted-foreground">No files attached.</p>
-        )}
-      </Section>
-
-      <Section title="Decisions" prominent>
-        {meeting.decisions.length > 0 ? (
-          <ul className="divide-y rounded-lg border">
-            {meeting.decisions.map((decision) => (
-              <li key={decision.id} className="px-4 py-4">
-                <p className="font-medium">{decision.content}</p>
-                {decision.project ? (
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    <ProjectLink project={decision.project} />
-                  </p>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-muted-foreground">No decisions recorded.</p>
-        )}
-      </Section>
-
-      <Section title="Action items" prominent>
-        {meeting.tasks.length > 0 ? (
-          <TaskList tasks={meeting.tasks} showSource={false} canEdit={canEdit} />
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            No action items came out of this meeting.
-          </p>
         )}
       </Section>
     </>

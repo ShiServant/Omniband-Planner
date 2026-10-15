@@ -112,30 +112,6 @@ export function ProjectDetailView({
           </p>
         )}
       </Section>
-
-      <Section title="Decisions" prominent>
-        {project.decisions.length > 0 ? (
-          <ul className="divide-y rounded-lg border">
-            {project.decisions.map((decision) => (
-              <li key={decision.id} className="px-4 py-4">
-                <p className="font-medium">{decision.content}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  <Link
-                    href={`/meetings/${decision.meeting.id}`}
-                    className="underline-offset-4 hover:underline"
-                  >
-                    {decision.meeting.title}
-                  </Link>
-                  <span aria-hidden> · </span>
-                  {formatDate(decision.meeting.meetingDate)}
-                </p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-muted-foreground">No decisions recorded.</p>
-        )}
-      </Section>
     </>
   );
 }

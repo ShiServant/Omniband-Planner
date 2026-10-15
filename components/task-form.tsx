@@ -19,7 +19,7 @@ import type {
   TaskSummary,
 } from "@/lib/types";
 
-const statuses: TaskStatus[] = ["to_do", "in_progress", "blocked", "done"];
+const statuses: TaskStatus[] = ["in_progress", "done"];
 const priorities: TaskPriority[] = ["low", "medium", "high", "urgent"];
 
 export function TaskForm({
@@ -100,7 +100,7 @@ export function TaskForm({
         <Field label="Status">
           <select
             name="status"
-            defaultValue={task?.status ?? "to_do"}
+            defaultValue={task?.status === "done" ? "done" : "in_progress"}
             className={inputClass}
           >
             {statuses.map((status) => (
@@ -124,6 +124,18 @@ export function TaskForm({
           </select>
         </Field>
       </div>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="important"
+          value="true"
+          defaultChecked={task?.important ?? false}
+        />
+        Important
+      </label>
+      <p className="-mt-2 text-xs text-muted-foreground">
+        Important tasks appear first on the dashboard, inside a red border.
+      </p>
       <Field label="Due date">
         <input
           name="dueDate"

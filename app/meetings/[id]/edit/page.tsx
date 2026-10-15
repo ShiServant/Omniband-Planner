@@ -3,11 +3,10 @@ import { notFound } from "next/navigation";
 import { DatabaseUnavailable } from "@/components/database-unavailable";
 import { MeetingForm } from "@/components/meeting-form";
 import { PageHeader } from "@/components/page-header";
+import { DeleteMeetingButton } from "@/components/delete-meeting-button";
 import { requireEditPage } from "@/lib/admin/guard";
-import { listPeople } from "@/lib/data/people";
 import { listProjects } from "@/lib/data/projects";
 import { getMeeting } from "@/lib/data/meetings";
-import { listTasks } from "@/lib/data/tasks";
 import { toDateTimeLocal } from "@/lib/format";
 
 export const metadata: Metadata = {
@@ -19,19 +18,12 @@ export default async function EditMeetingPage(props: {
 }) {
   const { id } = await props.params;
   await requireEditPage(`/meetings/${id}/edit`);
-  const [meeting, people, projects, tasks] = await Promise.all([
+  const [meeting, projects] = await Promise.all([
     getMeeting(id),
-    listPeople(),
     listProjects("all"),
-    listTasks({ status: "all" }),
   ]);
 
-  if (
-    !meeting.configured ||
-    !people.configured ||
-    !projects.configured ||
-    !tasks.configured
-  ) {
+  if (!meeting.configured || !projects.configured) {
     return (
       <>
         <PageHeader
@@ -56,10 +48,11 @@ export default async function EditMeetingPage(props: {
       <MeetingForm
         meeting={meeting.data}
         meetingLocal={toDateTimeLocal(meeting.data.meetingDate)}
-        people={people.data}
         projects={projects.data}
-        tasks={tasks.data}
       />
+      <div className="mt-8">
+        <DeleteMeetingButton id={meeting.data.id} title={meeting.data.title} />
+      </div>
     </>
   );
 }

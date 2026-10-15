@@ -68,8 +68,8 @@ function taskCountLabel(
 ) {
   const noun = count === 1 ? "task" : "tasks";
 
-  if (!status || status === "outstanding") {
-    return `${count} outstanding ${noun}`;
+  if (!status || status === "in_progress") {
+    return `${count} in progress ${noun}`;
   }
 
   return `${count} ${noun}`;

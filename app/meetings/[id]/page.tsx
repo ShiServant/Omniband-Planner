@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DatabaseUnavailable } from "@/components/database-unavailable";
+import { DeleteMeetingButton } from "@/components/delete-meeting-button";
 import { EditLink } from "@/components/edit-link";
 import { MeetingDetailView } from "@/components/meeting-detail";
 import { PageHeader } from "@/components/page-header";
@@ -33,7 +34,7 @@ export default async function MeetingPage(props: PageProps<"/meetings/[id]">) {
       <>
         <PageHeader
           title="Meeting"
-          description="What was decided, and which actions came next."
+          description="What was discussed, and which files were kept."
           back={{ href: "/meetings", label: "Meetings" }}
         />
         <DatabaseUnavailable />
@@ -52,11 +53,17 @@ export default async function MeetingPage(props: PageProps<"/meetings/[id]">) {
         back={{ href: "/meetings", label: "Meetings" }}
         action={
           editing ? (
-            <EditLink href={`/meetings/${result.data.id}/edit`}>Edit</EditLink>
+            <div className="flex items-center gap-2">
+              <DeleteMeetingButton
+                id={result.data.id}
+                title={result.data.title}
+              />
+              <EditLink href={`/meetings/${result.data.id}/edit`}>Edit</EditLink>
+            </div>
           ) : null
         }
       />
-      <MeetingDetailView meeting={result.data} canEdit={editing} />
+      <MeetingDetailView meeting={result.data} />
     </>
   );
 }

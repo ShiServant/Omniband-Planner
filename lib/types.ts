@@ -6,7 +6,7 @@ export type ProjectStatus =
 
 export type ProjectHealth = "on_track" | "at_risk" | "blocked";
 
-export type TaskStatus = "to_do" | "in_progress" | "blocked" | "done";
+export type TaskStatus = "in_progress" | "done";
 
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
 
@@ -28,13 +28,14 @@ export type ProjectSummary = {
   startDate: string | null;
   blocker: string | null;
   currentUpdate: string | null;
+  createdAt: string;
   updatedAt: string;
 };
 
 export type TaskFilters = {
   personId?: string;
   projectId?: string;
-  status?: TaskStatus | "outstanding" | "all";
+  status?: TaskStatus | "all";
   priority?: TaskPriority;
 };
 
@@ -44,6 +45,7 @@ export type TaskSummary = {
   description: string | null;
   status: TaskStatus;
   priority: TaskPriority;
+  important: boolean;
   dueDate: string | null;
   project: NamedRef;
   responsible: NamedRef;
@@ -60,11 +62,6 @@ export type ProjectDetail = ProjectSummary & {
     title: string;
     meetingDate: string;
     summary: string | null;
-  }>;
-  decisions: Array<{
-    id: string;
-    content: string;
-    meeting: { id: string; title: string; meetingDate: string };
   }>;
 };
 
@@ -83,8 +80,6 @@ export type MeetingDetail = {
   summary: string | null;
   projects: NamedRef[];
   files: MeetingFile[];
-  decisions: Array<{ id: string; content: string; project: NamedRef | null }>;
-  tasks: TaskSummary[];
 };
 
 export type MeetingFile = {
@@ -115,14 +110,6 @@ export type PersonDetail = PersonSummary & {
   tasks: TaskSummary[];
 };
 
-export type DecisionSummary = {
-  id: string;
-  content: string;
-  createdAt: string;
-  meeting: { id: string; title: string; meetingDate: string };
-  project: NamedRef | null;
-};
-
 export type UpcomingItem = {
   id: string;
   projectId: string;
@@ -133,17 +120,17 @@ export type UpcomingItem = {
   overdue: boolean;
 };
 
+export type CalendarEntry = {
+  date: string;
+  kind: "deadline" | "project";
+  title: string;
+  detail: string;
+};
+
 export type DashboardData = {
-  counts: {
-    active: number;
-    onTrack: number;
-    needsAttention: number;
-    blocked: number;
-  };
+  today: string;
   activeProjects: ProjectSummary[];
-  attentionProjects: ProjectSummary[];
   upcoming: UpcomingItem[];
-  importantTasks: TaskSummary[];
-  recentDecisions: DecisionSummary[];
-  recentProjects: ProjectSummary[];
+  tasks: TaskSummary[];
+  calendar: CalendarEntry[];
 };

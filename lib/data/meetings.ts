@@ -4,8 +4,7 @@ import { cache } from "react";
 import { failRead, one, type DataResult } from "@/lib/data/read";
 import { isUuid } from "@/lib/format";
 import { getReadClient } from "@/lib/supabase/read";
-import { compareTasks, mapTask, type TaskRow } from "@/lib/data/tasks";
-import type { DecisionSummary, MeetingDetail, MeetingFile, MeetingSummary, NamedRef } from "@/lib/types";
+import type { MeetingDetail, MeetingFile, MeetingSummary, NamedRef } from "@/lib/types";
 
 type MeetingRow = {
   id: string;
@@ -58,67 +57,6 @@ export async function listMeetings(): Promise<DataResult<MeetingSummary[]>> {
   };
 }
 
-type DecisionRow = {
-  id: string;
-  content: string;
-  created_at: string;
-  project: NamedRef | NamedRef[] | null;
-  meeting: {
-    id: string;
-    title: string;
-    meeting_date: string;
-  } | Array<{
-    id: string;
-    title: string;
-    meeting_date: string;
-  }> | null;
-};
-
-export async function listDecisions(): Promise<DataResult<DecisionSummary[]>> {
-  const client = getReadClient();
-
-  if (!client) {
-    return { configured: false };
-  }
-
-  const { data, error } = await client.from("decisions").select(`
-    id,
-    content,
-    created_at,
-    project:projects!project_id (id, name),
-    meeting:meetings!meeting_id (id, title, meeting_date)
-  `);
-
-  if (error) {
-    failRead("decisions", error.message);
-  }
-
-  return {
-    configured: true,
-    data: ((data ?? []) as DecisionRow[]).flatMap((decision) => {
-      const meeting = one(decision.meeting);
-
-      if (!meeting) {
-        return [];
-      }
-
-      return [
-        {
-          id: decision.id,
-          content: decision.content,
-          createdAt: decision.created_at,
-          meeting: {
-            id: meeting.id,
-            title: meeting.title,
-            meetingDate: meeting.meeting_date,
-          },
-          project: one(decision.project),
-        },
-      ];
-    }),
-  };
-}
-
 type MeetingDetailRow = {
   id: string;
   title: string;
@@ -127,13 +65,6 @@ type MeetingDetailRow = {
   discussed: Array<{
     project: NamedRef | NamedRef[] | null;
   }> | null;
-  decisions: Array<{
-    id: string;
-    content: string;
-    created_at: string;
-    project: NamedRef | NamedRef[] | null;
-  }> | null;
-  tasks: TaskRow[] | null;
 };
 
 export const getMeeting = cache(
@@ -158,23 +89,6 @@ export const getMeeting = cache(
         summary,
         discussed:meeting_projects (
           project:projects!project_id (id, name)
-        ),
-        decisions (
-          id,
-          content,
-          created_at,
-          project:projects!project_id (id, name)
-        ),
-        tasks (
-          id,
-          title,
-          description,
-          status,
-          priority,
-          due_date,
-          project:projects!project_id (id, name),
-          responsible:people!responsible_person_id (id, name),
-          source_meeting:meetings!source_meeting_id (id, title)
         )
       `,
       )
@@ -202,14 +116,6 @@ export const getMeeting = cache(
           const project = one(item.project);
           return project ? [project] : [];
         }),
-        decisions: [...(meeting.decisions ?? [])]
-          .sort((a, b) => (a.created_at < b.created_at ? -1 : 1))
-          .map((decision) => ({
-            id: decision.id,
-            content: decision.content,
-            project: one(decision.project),
-          })),
-        tasks: (meeting.tasks ?? []).map(mapTask).sort(compareTasks),
         files: await listMeetingFiles(client, id),
       },
     };

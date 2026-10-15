@@ -1,7 +1,6 @@
 import "server-only";
 
 import { buildDashboard } from "@/lib/dashboard";
-import { listDecisions } from "@/lib/data/meetings";
 import { listProjects } from "@/lib/data/projects";
 import type { DataResult } from "@/lib/data/read";
 import { listTasks } from "@/lib/data/tasks";
@@ -9,27 +8,17 @@ import { londonToday } from "@/lib/format";
 import type { DashboardData } from "@/lib/types";
 
 export async function getDashboard(): Promise<DataResult<DashboardData>> {
-  const [projects, tasks, decisions] = await Promise.all([
+  const [projects, tasks] = await Promise.all([
     listProjects("all"),
-    listTasks({ status: "outstanding" }),
-    listDecisions(),
+    listTasks({ status: "in_progress" }),
   ]);
 
-  if (
-    !projects.configured ||
-    !tasks.configured ||
-    !decisions.configured
-  ) {
+  if (!projects.configured || !tasks.configured) {
     return { configured: false };
   }
 
   return {
     configured: true,
-    data: buildDashboard(
-      projects.data,
-      tasks.data,
-      decisions.data,
-      londonToday(),
-    ),
+    data: buildDashboard(projects.data, tasks.data, londonToday()),
   };
 }

@@ -43,7 +43,7 @@ function NavLinks({ compact = false }: { compact?: boolean }) {
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-2 rounded-md text-sm",
+              "flex cursor-pointer items-center gap-2 rounded-md text-sm transition-transform active:scale-[0.98]",
               compact ? "px-2.5 py-1.5" : "px-3 py-2",
               active
                 ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
@@ -108,7 +108,7 @@ function EditEntry({ editing }: { editing: boolean }) {
         <span className="text-xs text-muted-foreground">Editing</span>
         <button
           type="submit"
-          className="text-xs font-medium underline-offset-4 hover:underline"
+          className="cursor-pointer text-xs font-medium underline-offset-4 hover:underline"
         >
           Stop editing
         </button>

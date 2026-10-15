@@ -11,12 +11,7 @@ import type {
   ProjectStatus,
   ProjectSummary,
 } from "@/lib/types";
-import {
-  compareTasks,
-  mapTask,
-  TASK_SELECT,
-  type TaskRow,
-} from "@/lib/data/tasks";
+import { compareTasks, mapTask, readTaskRows } from "@/lib/data/tasks";
 
 const PROJECT_SELECT = `
   id,
@@ -32,6 +27,7 @@ const PROJECT_SELECT = `
   next_step,
   next_milestone,
   blocker,
+  created_at,
   updated_at,
   lead:people!lead_person_id (id, name, active)
 `;
@@ -52,6 +48,7 @@ type ProjectRow = {
   next_step: string | null;
   next_milestone: string | null;
   blocker: string | null;
+  created_at: string;
   updated_at: string;
   lead: LeadRow | LeadRow[] | null;
 };
@@ -78,6 +75,7 @@ function mapProject(row: ProjectRow): ProjectSummary {
     startDate: row.start_date,
     blocker: row.blocker,
     currentUpdate: row.current_update,
+    createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
@@ -157,20 +155,6 @@ type MeetingLinkRow = {
   }> | null;
 };
 
-type DecisionRow = {
-  id: string;
-  content: string;
-  meeting: {
-    id: string;
-    title: string;
-    meeting_date: string;
-  } | Array<{
-    id: string;
-    title: string;
-    meeting_date: string;
-  }> | null;
-};
-
 export const getProject = cache(
   async (id: string): Promise<DataResult<ProjectDetail | null>> => {
     if (!isUuid(id)) {
@@ -197,41 +181,28 @@ export const getProject = cache(
       return { configured: true, data: null };
     }
 
-    const [membersResult, tasksResult, meetingsResult, decisionsResult] =
-      await Promise.all([
-        client
-          .from("project_members")
-          .select("role, person:people!person_id (id, name, active)")
-          .eq("project_id", id),
-        client.from("tasks").select(TASK_SELECT).eq("project_id", id),
-        client
-          .from("meeting_projects")
-          .select(
-            "meeting:meetings!meeting_id (id, title, meeting_date, summary)",
-          )
-          .eq("project_id", id),
-        client
-          .from("decisions")
-          .select(
-            "id, content, meeting:meetings!meeting_id (id, title, meeting_date)",
-          )
-          .eq("project_id", id),
-      ]);
+    const [membersResult, taskRows, meetingsResult] = await Promise.all([
+      client
+        .from("project_members")
+        .select("role, person:people!person_id (id, name, active)")
+        .eq("project_id", id),
+      readTaskRows("project tasks", (columns) =>
+        client.from("tasks").select(columns).eq("project_id", id),
+      ),
+      client
+        .from("meeting_projects")
+        .select(
+          "meeting:meetings!meeting_id (id, title, meeting_date, summary)",
+        )
+        .eq("project_id", id),
+    ]);
 
     if (membersResult.error) {
       failRead("project members", membersResult.error.message);
     }
 
-    if (tasksResult.error) {
-      failRead("project tasks", tasksResult.error.message);
-    }
-
     if (meetingsResult.error) {
       failRead("project meetings", meetingsResult.error.message);
-    }
-
-    if (decisionsResult.error) {
-      failRead("project decisions", decisionsResult.error.message);
     }
 
     const row = projectResult.data as ProjectRow;
@@ -253,9 +224,7 @@ export const getProject = cache(
       })
       .sort((a, b) => a.name.localeCompare(b.name, "en"));
 
-    const tasks = ((tasksResult.data ?? []) as TaskRow[])
-      .map(mapTask)
-      .sort(compareTasks);
+    const tasks = taskRows.map(mapTask).sort(compareTasks);
     const meetings = ((meetingsResult.data ?? []) as MeetingLinkRow[])
       .flatMap((link) => {
         const meeting = one(link.meeting);
@@ -274,29 +243,6 @@ export const getProject = cache(
         ];
       })
       .sort((a, b) => (a.meetingDate < b.meetingDate ? 1 : -1));
-    const decisions = ((decisionsResult.data ?? []) as DecisionRow[])
-      .flatMap((decision) => {
-        const meeting = one(decision.meeting);
-
-        if (!meeting) {
-          return [];
-        }
-
-        return [
-          {
-            id: decision.id,
-            content: decision.content,
-            meeting: {
-              id: meeting.id,
-              title: meeting.title,
-              meetingDate: meeting.meeting_date,
-            },
-          },
-        ];
-      })
-      .sort((a, b) =>
-        a.meeting.meetingDate < b.meeting.meetingDate ? 1 : -1,
-      );
 
     return {
       configured: true,
@@ -310,7 +256,6 @@ export const getProject = cache(
         ],
         tasks,
         meetings,
-        decisions,
       },
     };
   },

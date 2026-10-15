@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DatabaseUnavailable } from "@/components/database-unavailable";
+import { DeleteMeetingButton } from "@/components/delete-meeting-button";
 import { EditLink } from "@/components/edit-link";
 import { PageHeader } from "@/components/page-header";
 import { ProjectLink } from "@/components/record-link";
@@ -22,7 +23,7 @@ export default async function MeetingsPage() {
     <>
       <PageHeader
         title="Meetings"
-        description="What was discussed, what was decided, and which actions came next."
+        description="What was discussed, and which files were kept."
         action={
           editing ? <EditLink href="/meetings/new">Add meeting</EditLink> : null
         }
@@ -39,12 +40,17 @@ export default async function MeetingsPage() {
                   >
                     {meeting.title}
                   </Link>
-                  <time
-                    dateTime={meeting.meetingDate}
-                    className="text-sm text-muted-foreground"
-                  >
-                    {formatDateTime(meeting.meetingDate)}
-                  </time>
+                  <div className="flex items-center gap-3">
+                    {editing ? (
+                      <DeleteMeetingButton id={meeting.id} title={meeting.title} />
+                    ) : null}
+                    <time
+                      dateTime={meeting.meetingDate}
+                      className="text-sm text-muted-foreground"
+                    >
+                      {formatDateTime(meeting.meetingDate)}
+                    </time>
+                  </div>
                 </div>
                 {meeting.projects.length > 0 ? (
                   <p className="mt-1 text-sm text-muted-foreground">

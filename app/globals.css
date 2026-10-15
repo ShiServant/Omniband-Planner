@@ -126,4 +126,24 @@
   html {
     @apply font-sans;
     }
+  a {
+    transition: opacity 90ms ease, background-color 90ms ease, color 90ms ease;
+  }
+  a:active {
+    opacity: 0.65;
+  }
+  button:not([data-slot="button"]):not(:disabled) {
+    cursor: pointer;
+    transition: transform 90ms ease, filter 90ms ease, background-color 90ms ease, opacity 90ms ease;
+  }
+  button:not([data-slot="button"]):not(:disabled):active {
+    transform: scale(0.96);
+    filter: brightness(0.88);
+  }
+  .pressable {
+    transition: opacity 90ms ease;
+  }
+  .pressable:active {
+    opacity: 0.65;
+  }
 }
